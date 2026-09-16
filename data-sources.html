@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Sources - Valveworks QA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Light Theme Colors */
+    --navy-950: #EEF1F6; --navy-900: #FFFFFF; --navy-800: #F6F8FB; --navy-700: #EAEEF5;
+    --line: #DCE3EE; --ink: #101827; --ink-dim: #5A6784; --ink-faint: #8993AC;
+    --accent: #2563EB; --accent-dim: #DBEAFE; --pass: #10B981; --pass-dim: #D1FAE5;
+    --scrap: #EF4444; --scrap-dim: #FEE2E2; --hold: #F59E0B; --hold-dim: #FEF3C7;
+    --rework: #8B5CF6; --rework-dim: #EDE9FE; --radius: 8px;
+    --font-ui: 'IBM Plex Sans', system-ui, sans-serif; --font-data: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;padding:0; overflow-x: hidden;}
+  body{background:var(--navy-950); color:var(--ink); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; min-height:100vh;}
+  a{color:inherit; text-decoration:none;}
+
+  /* Mobile Header */
+  .mobile-header { display: none; background: var(--navy-900); border-bottom: 1px solid var(--line); padding: 12px 16px; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .mobile-brand { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  .hamburger { background: none; border: none; font-size: 24px; color: var(--ink); cursor: pointer; padding: 4px; }
+  .brand-mark{ width:32px;height:32px; border-radius:6px; background:var(--accent); display:flex;align-items:center;justify-content:center; font-family:var(--font-data); font-weight:700; color:#fff; font-size:14px; flex-shrink:0; }
+
+  /* Shell & Sidebar */
+  .shell{ display:grid; grid-template-columns:240px minmax(0, 1fr); min-height:100vh; }
+  .sidebar{ background:var(--navy-900); border-right:1px solid var(--line); padding:24px 16px; position:sticky; top:0; height:100vh; transition: transform 0.3s ease; z-index: 105; }
+  .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(16, 24, 39, 0.4); z-index: 104; opacity: 0; transition: opacity 0.3s ease; }
+  .brand{ display:flex; align-items:center; gap:10px; padding:4px 6px 22px 6px; border-bottom:1px solid var(--line); margin-bottom:18px; }
+  .brand-name{ font-size:15px; font-weight:600; line-height:1.15; }
+  .brand-sub{ font-size:11px; color:var(--ink-faint); font-family:var(--font-data); letter-spacing:.02em; }
+  .nav-group-label{ font-size:11px; color:var(--ink-faint); padding:0 10px; margin:22px 0 8px 0; font-weight: 600; text-transform: uppercase; }
+  .nav-item{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:6px; font-size:14px; color:var(--ink-dim); margin-bottom:4px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+  .nav-item:hover { background: var(--navy-950); color: var(--ink); }
+  .nav-item.active{ background:var(--navy-800); color:var(--accent); font-weight: 600; box-shadow:inset 3px 0 0 var(--accent); }
+  .nav-dot{ width:6px;height:6px; border-radius:50%; background:currentColor; opacity:.7; flex-shrink:0; }
+
+  /* Responsive */
+  @media (max-width: 860px){
+    .shell{ grid-template-columns: 1fr; } .mobile-header { display: flex; }
+    .sidebar { position: fixed; transform: translateX(-100%); width: 260px; }
+    .sidebar.open { transform: translateX(0); } .sidebar-overlay.open { display: block; opacity: 1; }
+    .main { padding: 16px !important; } .topbar { flex-direction: column; align-items: flex-start !important; gap: 12px !important;}
+  }
+
+  /* Main Content */
+  .main{ padding:24px 32px 60px 32px; max-width:1400px; width: 100%; min-width: 0; }
+  .topbar{ display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:24px; }
+  .topbar h1{ font-size:24px; margin:0 0 6px 0; font-weight:700; letter-spacing:-.02em; color: var(--ink); }
+  .topbar p{ margin:0; font-size:14px; color:var(--ink-dim); }
+
+  /* KPI / Status Cards */
+  .kpi-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:24px; }
+  @media (max-width:800px){ .kpi-grid{grid-template-columns:1fr;} }
+  .kpi-card{ background:var(--navy-900); border:1px solid var(--line); border-radius:var(--radius); padding:20px; border-left:4px solid var(--kpi-color); box-shadow: 0 2px 5px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: center; }
+  .kpi-label{ font-size:13px; color:var(--ink-dim); font-weight:600; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 8px;}
+  .kpi-value{ font-family:var(--font-data); font-size:28px; font-weight:700; line-height:1; color:var(--ink); display: flex; align-items: center; gap: 8px; }
+  .kpi-foot{ margin-top:10px; font-size:12px; color:var(--ink-faint); }
+  
+  .status-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--ink-dim); }
+  .status-dot.online { background: var(--pass); box-shadow: 0 0 0 4px var(--pass-dim); }
+  .status-dot.offline { background: var(--scrap); box-shadow: 0 0 0 4px var(--scrap-dim); }
+
+  /* Panels */
+  .panel{ background:var(--navy-900); border:1px solid var(--line); border-radius:var(--radius); padding:24px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); margin-bottom: 24px;}
+  .panel-title{ font-size:16px; font-weight:600; margin:0 0 6px 0; }
+  .panel-sub{ font-size:13px; color:var(--ink-dim); margin:0 0 16px 0; }
+
+  /* Settings Form */
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .form-input { width: 100%; background: var(--navy-950); border: 1px solid var(--line); color: var(--ink-dim); font-family: var(--font-data); font-size: 13px; padding: 12px 14px; border-radius: 6px; outline: none; }
+  .form-input:read-only { cursor: not-allowed; opacity: 0.8; }
+  .btn-primary { background: var(--accent); color: #fff; border: none; padding: 10px 20px; font-size: 14px; font-weight: 600; border-radius: 6px; cursor: pointer; transition: 0.2s; font-family: var(--font-ui); }
+  .btn-primary:hover { background: #1D4ED8; }
+
+  /* Table (Schema) */
+  .table-wrap{ overflow-x:auto; border-radius: 6px; border: 1px solid var(--line); }
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; min-width:600px; background: var(--navy-900); }
+  thead th{ text-align:left; font-size:12px; font-weight:600; color:var(--ink-dim); background: var(--navy-950); border-bottom:1px solid var(--line); padding:12px 14px; }
+  tbody td{ padding:12px 14px; border-bottom:1px solid var(--line); color:var(--ink); }
+  .mono{ font-family:var(--font-data); font-size:13px; font-weight: 600; color: var(--accent); }
+  
+  #toast{position:fixed; bottom:22px;left:50%; transform:translateX(-50%) translateY(20px); background:var(--ink); color:var(--navy-900); padding:10px 16px; border-radius:6px; font-size:13px; display:flex; align-items:center; gap:9px; box-shadow:0 8px 24px rgba(0,0,0,.15); opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; z-index:110;}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="mobile-header">
+  <div class="mobile-brand"><div class="brand-mark">VW</div><span>Valveworks QA</span></div>
+  <button class="hamburger" id="menuBtn">☰</button>
+</div>
+
+<div class="shell">
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">VW</div>
+      <div><div class="brand-name">Valveworks</div><div class="brand-sub">Plant 04 · QA</div></div>
+    </div>
+    <div class="nav-group-label">Quality</div>
+    <a href="index.html"><div class="nav-item"><span class="nav-dot"></span>Dashboard</div></a>
+    <a href="production-log.html"><div class="nav-item"><span class="nav-dot"></span>Production log</div></a>
+    <a href="ncr-register.html"><div class="nav-item"><span class="nav-dot"></span>NCR register</div></a>
+    <a href="inspectors.html"><div class="nav-item"><span class="nav-dot"></span>Inspectors</div></a>
+    
+    <div class="nav-group-label">System</div>
+    <!-- เมนูลิงก์สลับหน้า (หน้า Data sources เป็น Active) -->
+    <a href="data-sources.html"><div class="nav-item active"><span class="nav-dot"></span>Data sources</div></a>
+    <a href="#"><div class="nav-item"><span class="nav-dot"></span>Settings</div></a>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>Data Sources</h1>
+        <p>Manage database connections and mappings</p>
+      </div>
+    </div>
+
+    <!-- Status Cards -->
+    <section class="kpi-grid">
+      <div class="kpi-card" style="--kpi-color: var(--pass);">
+        <div class="kpi-label">Connection Status</div>
+        <div class="kpi-value"><div class="status-dot" id="statusDot"></div><span id="statusText">Checking...</span></div>
+        <div class="kpi-foot">Google Sheets API Link</div>
+      </div>
+      <div class="kpi-card" style="--kpi-color: var(--accent);">
+        <div class="kpi-label">Total Records Synced</div>
+        <div class="kpi-value" id="recordCount">-</div>
+        <div class="kpi-foot">Available in local cache</div>
+      </div>
+      <div class="kpi-card" style="--kpi-color: #8B5CF6;">
+        <div class="kpi-label">Last Synchronization</div>
+        <div class="kpi-value" id="lastSync" style="font-size: 20px;">-</div>
+        <div class="kpi-foot">Automatically updates on load</div>
+      </div>
+    </section>
+
+    <!-- Endpoint Panel -->
+    <section class="panel">
+      <p class="panel-title">Integration Endpoint (Apps Script)</p>
+      <p class="panel-sub">This URL connects the dashboard to your Google Sheet database. To change the source, update the URL in your HTML files.</p>
+      
+      <div class="form-group">
+        <label class="form-label">Current Deployment URL</label>
+        <!-- เปลี่ยน Value เป็น URL ของคุณเพื่อให้แอดมินเห็นว่าใช้อะไรอยู่ -->
+        <input type="text" class="form-input" id="endpointUrl" value="https://script.google.com/macros/s/ใส่_URL_ของคุณที่นี่/exec" readonly>
+      </div>
+      
+      <button class="btn-primary" id="testBtn">Test Connection & Sync Now</button>
+    </section>
+
+    <!-- Schema Panel -->
+    <section class="panel">
+      <p class="panel-title">Expected Data Schema</p>
+      <p class="panel-sub">Ensure your Google Sheet (Tab: SHEET1) contains these exact headers in Row 1. If column names are changed, the dashboard will fail to load.</p>
+      
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Expected Column Name</th>
+              <th>Data Type</th>
+              <th>Description / Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">Date</td><td>Date (YYYY-MM-DD)</td><td>Production or inspection date (e.g., 2026-09-15)</td></tr>
+            <tr><td class="mono">Valve_Serial</td><td>Text</td><td>Unique identifier for the item (e.g., VV-260915-01)</td></tr>
+            <tr><td class="mono">Valve_Type</td><td>Text</td><td>Ball Valve, Gate Valve, Check Valve, Butterfly Valve</td></tr>
+            <tr><td class="mono">Inspection_Result</td><td>Text</td><td>Pass or Fail</td></tr>
+            <tr><td class="mono">Defect_Type</td><td>Text</td><td>Specific defect reason (Leave blank or 'None' if passed)</td></tr>
+            <tr><td class="mono">Quantity</td><td>Number</td><td>Number of units affected (usually 1)</td></tr>
+            <tr><td class="mono">Status</td><td>Text</td><td>PASS, HOLD, REWORK, or SCRAP</td></tr>
+            <tr><td class="mono">Inspector</td><td>Text</td><td>ID or Name of QA Inspector (e.g., QA_01)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toast"><span id="toastMsg">Action completed</span></div>
+
+<script>
+/* Mobile Sidebar */
+document.getElementById('menuBtn').addEventListener('click', () => { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('open'); });
+document.getElementById('sidebarOverlay').addEventListener('click', function() { document.getElementById('sidebar').classList.remove('open'); this.classList.remove('open'); });
+
+// 🔴 นำ Web App URL ของคุณมาใส่ตรงนี้ 🔴
+const APPS_SCRIPT_URL = 'ใส่_URL_ของคุณที่นี่';
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.innerHTML = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ฟังก์ชันทดสอบการเชื่อมต่อ
+async function testConnection() {
+  const btn = document.getElementById('testBtn');
+  const dot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  const recordCount = document.getElementById('recordCount');
+  const lastSync = document.getElementById('lastSync');
+  
+  btn.textContent = "Connecting...";
+  btn.disabled = true;
+  dot.className = "status-dot";
+  statusText.textContent = "Connecting...";
+
+  try {
+    const res = await fetch(APPS_SCRIPT_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const rows = await res.json();
+    
+    // สำเร็จ
+    dot.className = "status-dot online";
+    statusText.textContent = "Online & Connected";
+    recordCount.textContent = rows.length.toLocaleString('en-US');
+    
+    const now = new Date();
+    lastSync.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    
+    showToast('Sync successful! Connection is stable.');
+  } catch (err) {
+    // ล้มเหลว
+    dot.className = "status-dot offline";
+    statusText.textContent = "Offline / Error";
+    recordCount.textContent = "0";
+    console.error("Connection error:", err);
+    showToast('Failed to connect to Google Sheets.');
+  } finally {
+    btn.textContent = "Test Connection & Sync Now";
+    btn.disabled = false;
+  }
+}
+
+// ผูก Event ให้ปุ่มกด
+document.getElementById('testBtn').addEventListener('click', testConnection);
+
+// ทำงานทันทีเมื่อโหลดหน้าเว็บเสร็จ
+window.onload = testConnection;
+</script>
+</body>
+</html>
