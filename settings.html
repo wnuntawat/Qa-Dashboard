@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings - Valveworks QA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Light Theme Colors */
+    --navy-950: #EEF1F6; --navy-900: #FFFFFF; --navy-800: #F6F8FB; --navy-700: #EAEEF5;
+    --line: #DCE3EE; --ink: #101827; --ink-dim: #5A6784; --ink-faint: #8993AC;
+    --accent: #2563EB; --accent-dim: #DBEAFE; --pass: #10B981; --pass-dim: #D1FAE5;
+    --scrap: #EF4444; --scrap-dim: #FEE2E2; --hold: #F59E0B; --hold-dim: #FEF3C7;
+    --rework: #8B5CF6; --rework-dim: #EDE9FE; --radius: 8px;
+    --font-ui: 'IBM Plex Sans', system-ui, sans-serif; --font-data: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;padding:0; overflow-x: hidden;}
+  body{background:var(--navy-950); color:var(--ink); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; min-height:100vh;}
+  a{color:inherit; text-decoration:none;}
+
+  /* Mobile Header */
+  .mobile-header { display: none; background: var(--navy-900); border-bottom: 1px solid var(--line); padding: 12px 16px; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .mobile-brand { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  .hamburger { background: none; border: none; font-size: 24px; color: var(--ink); cursor: pointer; padding: 4px; }
+  .brand-mark{ width:32px;height:32px; border-radius:6px; background:var(--accent); display:flex;align-items:center;justify-content:center; font-family:var(--font-data); font-weight:700; color:#fff; font-size:14px; flex-shrink:0; }
+
+  /* Shell & Sidebar */
+  .shell{ display:grid; grid-template-columns:240px minmax(0, 1fr); min-height:100vh; }
+  .sidebar{ background:var(--navy-900); border-right:1px solid var(--line); padding:24px 16px; position:sticky; top:0; height:100vh; transition: transform 0.3s ease; z-index: 105; }
+  .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(16, 24, 39, 0.4); z-index: 104; opacity: 0; transition: opacity 0.3s ease; }
+  .brand{ display:flex; align-items:center; gap:10px; padding:4px 6px 22px 6px; border-bottom:1px solid var(--line); margin-bottom:18px; }
+  .brand-name{ font-size:15px; font-weight:600; line-height:1.15; }
+  .brand-sub{ font-size:11px; color:var(--ink-faint); font-family:var(--font-data); letter-spacing:.02em; }
+  .nav-group-label{ font-size:11px; color:var(--ink-faint); padding:0 10px; margin:22px 0 8px 0; font-weight: 600; text-transform: uppercase; }
+  .nav-item{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:6px; font-size:14px; color:var(--ink-dim); margin-bottom:4px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+  .nav-item:hover { background: var(--navy-950); color: var(--ink); }
+  .nav-item.active{ background:var(--navy-800); color:var(--accent); font-weight: 600; box-shadow:inset 3px 0 0 var(--accent); }
+  .nav-dot{ width:6px;height:6px; border-radius:50%; background:currentColor; opacity:.7; flex-shrink:0; }
+
+  /* Responsive */
+  @media (max-width: 860px){
+    .shell{ grid-template-columns: 1fr; } .mobile-header { display: flex; }
+    .sidebar { position: fixed; transform: translateX(-100%); width: 260px; }
+    .sidebar.open { transform: translateX(0); } .sidebar-overlay.open { display: block; opacity: 1; }
+    .main { padding: 16px !important; } .topbar { flex-direction: column; align-items: flex-start !important; gap: 12px !important;}
+  }
+
+  /* Main Content */
+  .main{ padding:24px 32px 60px 32px; max-width:900px; width: 100%; min-width: 0; }
+  .topbar{ display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:24px; }
+  .topbar h1{ font-size:24px; margin:0 0 6px 0; font-weight:700; letter-spacing:-.02em; color: var(--ink); }
+  .topbar p{ margin:0; font-size:14px; color:var(--ink-dim); }
+
+  /* Panels for Settings */
+  .panel{ background:var(--navy-900); border:1px solid var(--line); border-radius:var(--radius); padding:24px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); margin-bottom: 24px;}
+  .panel-title{ font-size:16px; font-weight:600; margin:0 0 6px 0; border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 20px;}
+  
+  /* Form Layouts */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; gap: 16px; } }
+  
+  .form-group { margin-bottom: 20px; }
+  .form-group.full-width { grid-column: 1 / -1; }
+  .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 8px; }
+  
+  .form-input, .form-select { 
+    width: 100%; background: var(--navy-900); border: 1px solid var(--line); 
+    color: var(--ink); font-family: var(--font-ui); font-size: 14px; 
+    padding: 10px 14px; border-radius: 6px; outline: none; transition: 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  .form-input:read-only { background: var(--navy-950); color: var(--ink-dim); cursor: not-allowed; }
+  
+  select.form-select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%235A6784'/></svg>"); background-repeat: no-repeat; background-position: right 14px center; }
+
+  /* Toggle Switch (iOS Style) */
+  .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--navy-950); }
+  .setting-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .setting-info h4 { margin: 0 0 4px 0; font-size: 14px; font-weight: 500; color: var(--ink); }
+  .setting-info p { margin: 0; font-size: 12px; color: var(--ink-dim); }
+  
+  .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0;}
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--line); transition: .3s; border-radius: 34px; }
+  .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+  input:checked + .slider { background-color: var(--pass); }
+  input:checked + .slider:before { transform: translateX(20px); }
+
+  /* Buttons */
+  .btn-container { display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; }
+  .btn-secondary { background: var(--navy-900); color: var(--ink-dim); border: 1px solid var(--line); padding: 10px 20px; font-size: 14px; font-weight: 600; border-radius: 6px; cursor: pointer; transition: 0.2s; font-family: var(--font-ui); }
+  .btn-secondary:hover { background: var(--navy-950); color: var(--ink); }
+  .btn-primary { background: var(--accent); color: #fff; border: none; padding: 10px 20px; font-size: 14px; font-weight: 600; border-radius: 6px; cursor: pointer; transition: 0.2s; font-family: var(--font-ui); }
+  .btn-primary:hover { background: #1D4ED8; }
+
+  #toast{position:fixed; bottom:22px;left:50%; transform:translateX(-50%) translateY(20px); background:var(--ink); color:var(--navy-900); padding:10px 16px; border-radius:6px; font-size:13px; display:flex; align-items:center; gap:9px; box-shadow:0 8px 24px rgba(0,0,0,.15); opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; z-index:110;}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  #toast .dot{width:7px;height:7px;border-radius:50%;background:var(--pass);flex-shrink:0;}
+</style>
+</head>
+<body>
+
+<div class="mobile-header">
+  <div class="mobile-brand"><div class="brand-mark">VW</div><span>Valveworks QA</span></div>
+  <button class="hamburger" id="menuBtn">☰</button>
+</div>
+
+<div class="shell">
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">VW</div>
+      <div><div class="brand-name">Valveworks</div><div class="brand-sub">Plant 04 · QA</div></div>
+    </div>
+    <div class="nav-group-label">Quality</div>
+    <a href="index.html"><div class="nav-item"><span class="nav-dot"></span>Dashboard</div></a>
+    <a href="production-log.html"><div class="nav-item"><span class="nav-dot"></span>Production log</div></a>
+    <a href="ncr-register.html"><div class="nav-item"><span class="nav-dot"></span>NCR register</div></a>
+    <a href="inspectors.html"><div class="nav-item"><span class="nav-dot"></span>Inspectors</div></a>
+    
+    <div class="nav-group-label">System</div>
+    <a href="data-sources.html"><div class="nav-item"><span class="nav-dot"></span>Data sources</div></a>
+    <a href="settings.html"><div class="nav-item active"><span class="nav-dot"></span>Settings</div></a>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>Settings</h1>
+        <p>Manage your dashboard preferences and system configurations</p>
+      </div>
+    </div>
+
+    <!-- Panel 1: Workspace Configurations -->
+    <section class="panel">
+      <p class="panel-title">Workspace Configuration</p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Plant Location</label>
+          <input type="text" class="form-input" value="Plant 04 (Samut Sakhon)" readonly title="Cannot be changed">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Production Line</label>
+          <input type="text" class="form-input" value="Line 3 - Valve Machining" readonly>
+        </div>
+        <div class="form-group full-width">
+          <label class="form-label">Timezone</label>
+          <select class="form-select" id="settingTimezone">
+            <option value="UTC+07:00" selected>(UTC+07:00) Bangkok, Hanoi, Jakarta</option>
+            <option value="UTC+08:00">(UTC+08:00) Singapore, Kuala Lumpur</option>
+            <option value="UTC+00:00">(UTC+00:00) Universal Coordinated Time</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Panel 2: Dashboard Preferences -->
+    <section class="panel">
+      <p class="panel-title">Dashboard Preferences</p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Default Date Range</label>
+          <select class="form-select" id="settingDateRange">
+            <option value="today">Today</option>
+            <option value="7d" selected>Last 7 Days</option>
+            <option value="30d">Last 30 Days</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Auto-Refresh Interval</label>
+          <select class="form-select" id="settingRefresh">
+            <option value="off">Off (Manual Refresh)</option>
+            <option value="1">Every 1 Minute</option>
+            <option value="5" selected>Every 5 Minutes</option>
+            <option value="15">Every 15 Minutes</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Panel 3: Alerts & Notifications -->
+    <section class="panel">
+      <p class="panel-title">Alerts & Notifications</p>
+      
+      <div class="setting-row">
+        <div class="setting-info">
+          <h4>Critical Defect Alert (Scrap)</h4>
+          <p>Highlight dashboard in red when a unit is marked as SCRAP.</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggleScrapAlert" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-info">
+          <h4>Hold Aging Warning</h4>
+          <p>Flag items that have been on HOLD for more than 48 hours.</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggleHoldAlert" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-info">
+          <h4>End-of-Shift Report</h4>
+          <p>Generate a daily summary report (Feature coming soon).</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggleReport" disabled>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Save Controls -->
+    <div class="btn-container">
+      <button class="btn-secondary" id="resetBtn">Discard Changes</button>
+      <button class="btn-primary" id="saveBtn">Save Settings</button>
+    </div>
+  </main>
+</div>
+
+<div id="toast"><span class="dot"></span><span id="toastMsg">Settings saved successfully!</span></div>
+
+<script>
+/* Mobile Sidebar */
+document.getElementById('menuBtn').addEventListener('click', () => { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('open'); });
+document.getElementById('sidebarOverlay').addEventListener('click', function() { document.getElementById('sidebar').classList.remove('open'); this.classList.remove('open'); });
+
+let toastTimer;
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// โหลดค่า Setting เดิม (ถ้าเคยบันทึกไว้ในเครื่อง)
+function loadSettings() {
+  const savedSettings = localStorage.getItem('vwSettings');
+  if (savedSettings) {
+    const s = JSON.parse(savedSettings);
+    if(s.timezone) document.getElementById('settingTimezone').value = s.timezone;
+    if(s.dateRange) document.getElementById('settingDateRange').value = s.dateRange;
+    if(s.refresh) document.getElementById('settingRefresh').value = s.refresh;
+    document.getElementById('toggleScrapAlert').checked = s.scrapAlert !== false;
+    document.getElementById('toggleHoldAlert').checked = s.holdAlert !== false;
+  }
+}
+
+// บันทึก Setting ลงในเครื่อง (Local Storage)
+function saveSettings() {
+  const settings = {
+    timezone: document.getElementById('settingTimezone').value,
+    dateRange: document.getElementById('settingDateRange').value,
+    refresh: document.getElementById('settingRefresh').value,
+    scrapAlert: document.getElementById('toggleScrapAlert').checked,
+    holdAlert: document.getElementById('toggleHoldAlert').checked
+  };
+  
+  localStorage.setItem('vwSettings', JSON.stringify(settings));
+  showToast('Settings saved successfully!');
+}
+
+// ผูก Event ให้ปุ่ม
+document.getElementById('saveBtn').addEventListener('click', saveSettings);
+document.getElementById('resetBtn').addEventListener('click', () => {
+  loadSettings();
+  showToast('Changes discarded.');
+});
+
+// รันตอนเริ่มโหลดหน้า
+window.onload = loadSettings;
+</script>
+</body>
+</html>
