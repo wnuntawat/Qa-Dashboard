@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NCR Register - Valveworks QA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Light Theme Colors */
+    --navy-950: #EEF1F6; --navy-900: #FFFFFF; --navy-800: #F6F8FB; --navy-700: #EAEEF5;
+    --line: #DCE3EE; --ink: #101827; --ink-dim: #5A6784; --ink-faint: #8993AC;
+    --accent: #2563EB; --accent-dim: #DBEAFE; --pass: #10B981; --pass-dim: #D1FAE5;
+    --scrap: #EF4444; --scrap-dim: #FEE2E2; --hold: #F59E0B; --hold-dim: #FEF3C7;
+    --rework: #8B5CF6; --rework-dim: #EDE9FE; --radius: 8px;
+    --font-ui: 'IBM Plex Sans', system-ui, sans-serif; --font-data: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;padding:0; overflow-x: hidden;}
+  body{background:var(--navy-950); color:var(--ink); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; min-height:100vh;}
+  a{color:inherit; text-decoration:none;}
+
+  /* Mobile Header */
+  .mobile-header { display: none; background: var(--navy-900); border-bottom: 1px solid var(--line); padding: 12px 16px; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .mobile-brand { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  .hamburger { background: none; border: none; font-size: 24px; color: var(--ink); cursor: pointer; padding: 4px; }
+  .brand-mark{ width:32px;height:32px; border-radius:6px; background:var(--accent); display:flex;align-items:center;justify-content:center; font-family:var(--font-data); font-weight:700; color:#fff; font-size:14px; flex-shrink:0; }
+
+  /* Shell & Sidebar */
+  .shell{ display:grid; grid-template-columns:240px 1fr; min-height:100vh; }
+  .sidebar{ background:var(--navy-900); border-right:1px solid var(--line); padding:24px 16px; position:sticky; top:0; height:100vh; transition: transform 0.3s ease; z-index: 105; }
+  .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(16, 24, 39, 0.4); z-index: 104; opacity: 0; transition: opacity 0.3s ease; }
+  .brand{ display:flex; align-items:center; gap:10px; padding:4px 6px 22px 6px; border-bottom:1px solid var(--line); margin-bottom:18px; }
+  .brand-name{ font-size:15px; font-weight:600; line-height:1.15; }
+  .brand-sub{ font-size:11px; color:var(--ink-faint); font-family:var(--font-data); letter-spacing:.02em; }
+  .nav-group-label{ font-size:11px; color:var(--ink-faint); padding:0 10px; margin:22px 0 8px 0; font-weight: 600; text-transform: uppercase; }
+  .nav-item{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:6px; font-size:14px; color:var(--ink-dim); margin-bottom:4px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+  .nav-item:hover { background: var(--navy-950); color: var(--ink); }
+  .nav-item.active{ background:var(--navy-800); color:var(--accent); font-weight: 600; box-shadow:inset 3px 0 0 var(--accent); }
+  .nav-dot{ width:6px;height:6px; border-radius:50%; background:currentColor; opacity:.7; flex-shrink:0; }
+
+  /* Responsive */
+  @media (max-width: 860px){
+    .shell{ grid-template-columns: 1fr; } .mobile-header { display: flex; }
+    .sidebar { position: fixed; transform: translateX(-100%); width: 260px; }
+    .sidebar.open { transform: translateX(0); } .sidebar-overlay.open { display: block; opacity: 1; }
+    .main { padding: 16px !important; } .topbar { flex-direction: column; align-items: flex-start !important; gap: 12px !important;}
+    .filters { width: 100%; justify-content: space-between; } .search-input, .filter-select { flex-grow: 1; width: 100%; }
+  }
+
+  /* Main Content */
+  .main{ padding:24px 32px 60px 32px; max-width:1400px; width: 100%; }
+  .topbar{ display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:24px; }
+  .topbar h1{ font-size:24px; margin:0 0 6px 0; font-weight:700; letter-spacing:-.02em; color: var(--ink); }
+  .topbar p{ margin:0; font-size:14px; color:var(--ink-dim); }
+  .filters{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  .search-input { background:var(--navy-900); border:1px solid var(--line); color:var(--ink); font-family:var(--font-ui); font-size:13.5px; font-weight:500; padding:9px 14px; border-radius:8px; width: 220px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+  .search-input::placeholder { color: var(--ink-faint); font-weight: 400; }
+  .search-input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  select.filter-select{ background:var(--navy-900); border:1px solid var(--line); color:var(--ink); font-family:var(--font-ui); font-size:13.5px; font-weight:500; padding:9px 36px 9px 14px; border-radius:8px; cursor:pointer; appearance:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%235A6784'/></svg>"); background-repeat:no-repeat; background-position:right 14px center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+
+  /* KPI Cards for NCR */
+  .kpi-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:24px; }
+  @media (max-width:800px){ .kpi-grid{grid-template-columns:1fr;} }
+  .kpi-card{ background:var(--navy-900); border:1px solid var(--line); border-radius:var(--radius); padding:20px; position:relative; border-left:4px solid var(--kpi-color); box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+  .kpi-top{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
+  .kpi-label{ font-size:13px; color:var(--ink-dim); font-weight:600; text-transform: uppercase; letter-spacing: 0.03em; }
+  .kpi-value{ font-family:var(--font-data); font-size:34px; font-weight:700; line-height:1; color:var(--ink); }
+  .kpi-value .unit{ font-size:16px; font-family:var(--font-ui); font-weight:600; color:var(--ink-faint); margin-left:4px; }
+
+  /* Panel & Table */
+  .panel{ background:var(--navy-900); border:1px solid var(--line); border-radius:var(--radius); padding:20px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+  .panel-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; gap:10px; }
+  .panel-title{ font-size:15px; font-weight:600; margin:0; }
+  .panel-sub{ font-size:12.5px; color:var(--ink-dim); margin:4px 0 0 0; }
+  .table-wrap{ overflow-x:auto; margin-top:8px; border-radius: 6px; border: 1px solid var(--line); }
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; min-width:800px; background: var(--navy-900); }
+  thead th{ text-align:left; font-size:12px; font-weight:600; color:var(--ink-dim); background: var(--navy-950); border-bottom:1px solid var(--line); padding:12px 14px; white-space:nowrap; }
+  tbody td{ padding:12px 14px; border-bottom:1px solid var(--line); color:var(--ink); white-space:nowrap; }
+  tbody tr:hover{ background:var(--navy-950); }
+  .mono{ font-family:var(--font-data); font-size:13px; }
+  .dim{ color:var(--ink-dim); }
+  
+  .badge{ display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; }
+  .badge::before{ content:''; width:6px; height:6px; border-radius:50%; background:currentColor; }
+  .badge.HOLD{ background:var(--hold-dim); color:#B45309; }
+  .badge.REWORK{ background:var(--rework-dim); color:#6D28D9; }
+  .badge.SCRAP{ background:var(--scrap-dim); color:#B91C1C; }
+  select.action-select{ background:var(--navy-900); border:1px solid var(--line); color:var(--ink); font-family:var(--font-ui); font-size:12.5px; font-weight:500; padding:6px 26px 6px 10px; border-radius:6px; cursor:pointer; appearance:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='9' height='5'><path d='M0 0l4.5 5 4.5-5z' fill='%235A6784'/></svg>"); background-repeat:no-repeat; background-position:right 10px center; }
+  select.action-select:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .empty-state{ padding:50px 20px; text-align:center; color:var(--ink-faint); font-size:14px; }
+  
+  #toast{position:fixed; bottom:22px;left:50%; transform:translateX(-50%) translateY(20px); background:var(--ink); color:var(--navy-900); padding:10px 16px; border-radius:6px; font-size:13px; display:flex; align-items:center; gap:9px; box-shadow:0 8px 24px rgba(0,0,0,.15); opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; z-index:110;}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="mobile-header">
+  <div class="mobile-brand"><div class="brand-mark">VW</div><span>Valveworks QA</span></div>
+  <button class="hamburger" id="menuBtn">☰</button>
+</div>
+
+<div class="shell">
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">VW</div>
+      <div><div class="brand-name">Valveworks</div><div class="brand-sub">Plant 04 · QA</div></div>
+    </div>
+    <div class="nav-group-label">Quality</div>
+    <a href="index.html"><div class="nav-item"><span class="nav-dot"></span>Dashboard</div></a>
+    <a href="production-log.html"><div class="nav-item"><span class="nav-dot"></span>Production log</div></a>
+    <a href="ncr-register.html"><div class="nav-item active"><span class="nav-dot"></span>NCR register</div></a>
+    <a href="#"><div class="nav-item"><span class="nav-dot"></span>Inspectors</div></a>
+    <div class="nav-group-label">System</div>
+    <a href="#"><div class="nav-item"><span class="nav-dot"></span>Data sources</div></a>
+    <a href="#"><div class="nav-item"><span class="nav-dot"></span>Settings</div></a>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>NCR Register</h1>
+        <p>Manage and disposition non-conforming units</p>
+      </div>
+      <div class="filters">
+        <input type="text" id="searchInput" class="search-input" placeholder="Search Serial (e.g. VV-26...)">
+        <select class="filter-select" id="statusFilter">
+          <option value="all">All Open Issues</option>
+          <option value="Hold">Hold (Pending)</option>
+          <option value="Rework">In Rework</option>
+          <option value="Scrap">Scrapped</option>
+        </select>
+        <select class="filter-select" id="valveFilter">
+          <option value="all">All Valve Types</option>
+          <option value="Ball Valve">Ball Valve</option>
+          <option value="Gate Valve">Gate Valve</option>
+          <option value="Check Valve">Check Valve</option>
+          <option value="Butterfly Valve">Butterfly Valve</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- KPI Widgets สำหรับ NCR -->
+    <section class="kpi-grid">
+      <div class="kpi-card" style="--kpi-color: var(--hold);">
+        <div class="kpi-top"><span class="kpi-label">Items on Hold</span></div>
+        <div class="kpi-value" id="kpiHold">-<span class="unit">units</span></div>
+        <div class="kpi-foot">Requires review & disposition</div>
+      </div>
+      <div class="kpi-card" style="--kpi-color: var(--rework);">
+        <div class="kpi-top"><span class="kpi-label">In Rework</span></div>
+        <div class="kpi-value" id="kpiRework">-<span class="unit">units</span></div>
+        <div class="kpi-foot">Currently being repaired</div>
+      </div>
+      <div class="kpi-card" style="--kpi-color: var(--scrap);">
+        <div class="kpi-top"><span class="kpi-label">Scrapped</span></div>
+        <div class="kpi-value" id="kpiScrap">-<span class="unit">units</span></div>
+        <div class="kpi-foot">Total discarded items</div>
+      </div>
+    </section>
+
+    <!-- ตาราง NCR -->
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <p class="panel-title">Non-Conformance Log</p>
+          <p class="panel-sub" id="recordCount">Loading records...</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Valve serial</th>
+              <th>Valve type</th>
+              <th>Defect type</th>
+              <th>Qty</th>
+              <th>QA inspector</th>
+              <th>Current Status</th>
+              <th>Disposition (Action)</th>
+            </tr>
+          </thead>
+          <tbody id="ncrBody">
+             <tr><td colspan="8"><div class="empty-state">Loading data from Google Sheets...</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toast"><span id="toastMsg">Status updated</span></div>
+
+<script>
+/* Mobile Sidebar */
+document.getElementById('menuBtn').addEventListener('click', () => { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('open'); });
+document.getElementById('sidebarOverlay').addEventListener('click', function() { document.getElementById('sidebar').classList.remove('open'); this.classList.remove('open'); });
+
+// 🔴🔴🔴 สำคัญมาก: นำ Web App URL อันเดียวกับหน้าอื่นๆ มาใส่ตรงนี้ครับ 🔴🔴🔴
+const APPS_SCRIPT_URL = 'ใส่_URL_ของคุณที่นี่';
+
+let ALL_RECORDS = [];
+
+function parseSheetDate(raw) {
+  const s = String(raw ?? '').trim();
+  const isoDatePrefix = s.match(/^(\d{4}-\d{2}-\d{2})/); 
+  if (isoDatePrefix) return isoDatePrefix[1];
+  const dmy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (dmy) { const [, d, mo, y] = dmy; return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+  return s;
+}
+function normalizeStatus(s) {
+  const map = { PASS: 'Pass', HOLD: 'Hold', REWORK: 'Rework', SCRAP: 'Scrap' };
+  return map[String(s ?? '').trim().toUpperCase()] || 'Hold';
+}
+function normalizeRow(row) {
+  return { date: parseSheetDate(row.Date), serial: row.Valve_Serial, valveType: row.Valve_Type, defectType: (!row.Defect_Type || row.Defect_Type === 'None') ? '—' : row.Defect_Type, quantity: Number(row.Quantity) > 0 ? Number(row.Quantity) : 1, status: normalizeStatus(row.Status), inspector: row.Inspector };
+}
+
+// Fallback Mock Data
+function generateMockData() {
+  const records = []; const VALVE_TYPES = ['Ball Valve', 'Gate Valve', 'Check Valve', 'Butterfly Valve']; const DEFECT_TYPES = ['Thread Flaw (เกลียวล้ม)', 'Leakage (รั่วซึม)', 'Porosity (ฟองอากาศ)', 'Dimensional Deviation (มิติเพี้ยน)', 'Surface Scratches (ผิวเป็นรอย)']; const INSPECTORS = ['QA_01', 'QA_02', 'QA_03'];
+  let count = 30;
+  for (let i = 0; i < count; i++) {
+    let status = i % 3 === 0 ? 'Hold' : (i % 2 === 0 ? 'Rework' : 'Scrap');
+    records.push({ date: '2026-09-15', serial: `VV-260915-${String(i+1).padStart(2, '0')}`, valveType: VALVE_TYPES[i%4], defectType: DEFECT_TYPES[i%5], quantity: 1, status, inspector: INSPECTORS[i%3] });
+  }
+  return records;
+}
+
+async function fetchProductionData() {
+  try {
+    const res = await fetch(APPS_SCRIPT_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const rows = await res.json();
+    return rows.map(normalizeRow);
+  } catch (err) {
+    console.warn('Fetch failed, using mock data:', err);
+    return generateMockData();
+  }
+}
+
+function renderNCR() {
+  // กรองเฉพาะงานที่มีปัญหา (ไม่ใช่ Pass)
+  const ncrRecords = ALL_RECORDS.filter(r => r.status !== 'Pass');
+  
+  // จัดการตัวกรองด้านบน
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+  const statusFilter = document.getElementById('statusFilter').value;
+  const valveFilter = document.getElementById('valveFilter').value;
+
+  const filteredData = ncrRecords.filter(r => {
+    const matchSearch = r.serial.toLowerCase().includes(searchTerm);
+    const matchStatus = statusFilter === 'all' || r.status === statusFilter;
+    const matchValve = valveFilter === 'all' || r.valveType === valveFilter;
+    return matchSearch && matchStatus && matchValve;
+  });
+
+  filteredData.sort((a, b) => b.date.localeCompare(a.date));
+
+  // อัปเดตตัวเลข KPI ด้านบน
+  const holdCount = ncrRecords.filter(r => r.status === 'Hold').reduce((sum, r) => sum + r.quantity, 0);
+  const reworkCount = ncrRecords.filter(r => r.status === 'Rework').reduce((sum, r) => sum + r.quantity, 0);
+  const scrapCount = ncrRecords.filter(r => r.status === 'Scrap').reduce((sum, r) => sum + r.quantity, 0);
+  
+  document.getElementById('kpiHold').innerHTML = `${holdCount.toLocaleString('en-US')}<span class="unit">units</span>`;
+  document.getElementById('kpiRework').innerHTML = `${reworkCount.toLocaleString('en-US')}<span class="unit">units</span>`;
+  document.getElementById('kpiScrap').innerHTML = `${scrapCount.toLocaleString('en-US')}<span class="unit">units</span>`;
+  
+  document.getElementById('recordCount').textContent = `Showing ${filteredData.length} records`;
+
+  // วาดตาราง
+  const body = document.getElementById('ncrBody');
+  if (!filteredData.length) {
+    body.innerHTML = `<tr><td colspan="8"><div class="empty-state">No NCR records found matching your criteria.</div></td></tr>`;
+    return;
+  }
+
+  body.innerHTML = filteredData.map(r => {
+    const statusKey = r.status.toUpperCase();
+    return `
+    <tr data-serial="${r.serial}">
+      <td class="mono dim">${r.date}</td>
+      <td class="mono" style="color:var(--accent); font-weight:600;">${r.serial}</td>
+      <td>${r.valveType}</td>
+      <td title="${r.defectType}">${r.defectType}</td>
+      <td class="mono">${r.quantity}</td>
+      <td>${r.inspector}</td>
+      <td><span class="badge ${statusKey}">${statusKey}</span></td>
+      <td>
+        <select class="action-select" data-serial="${r.serial}">
+          <option value="HOLD" ${statusKey === 'HOLD' ? 'selected' : ''}>Hold</option>
+          <option value="REWORK" ${statusKey === 'REWORK' ? 'selected' : ''}>Rework</option>
+          <option value="SCRAP" ${statusKey === 'SCRAP' ? 'selected' : ''}>Scrap</option>
+          <!-- ฟังก์ชันพิเศษ: หากซ่อมเสร็จแล้ว สามารถคืนชีพงานนี้ให้ผ่าน (Pass) ได้ -->
+          <option value="PASS">Mark as Passed</option>
+        </select>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // ผูก Event ให้ระบบ Write-back
+  body.querySelectorAll('.action-select').forEach(sel => {
+    sel.addEventListener('change', async (e) => {
+      const serial = e.target.getAttribute('data-serial');
+      const newStatus = e.target.value; 
+      
+      e.target.disabled = true; // ป้องกันการกดซ้ำระหว่างอัปเดต
+      showToast(`Updating ${serial} to ${newStatus}...`);
+      
+      try {
+        const response = await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ serial: serial, status: newStatus })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+          const record = ALL_RECORDS.find(r => r.serial === serial);
+          if (record) {
+            record.status = newStatus.charAt(0) + newStatus.slice(1).toLowerCase();
+          }
+          showToast(`Success: ${serial} updated!`);
+          renderNCR(); 
+        } else {
+          throw new Error(result.error);
+        }
+      } catch (err) {
+        console.error(err);
+        showToast(`Error updating ${serial}`);
+        e.target.disabled = false;
+        renderNCR();
+      }
+    });
+  });
+}
+
+let toastTimer;
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.innerHTML = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+(async function init() {
+  ALL_RECORDS = await fetchProductionData();
+  renderNCR();
+
+  document.getElementById('searchInput').addEventListener('input', renderNCR);
+  document.getElementById('statusFilter').addEventListener('change', renderNCR);
+  document.getElementById('valveFilter').addEventListener('change', renderNCR);
+})();
+</script>
+</body>
+</html>
