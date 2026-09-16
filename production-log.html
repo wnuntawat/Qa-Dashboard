@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Production Log - Valveworks QA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Light Theme Colors (ชุดเดียวกับหน้า Dashboard) */
+    --navy-950: #EEF1F6;
+    --navy-900: #FFFFFF;
+    --navy-800: #F6F8FB;
+    --navy-700: #EAEEF5;
+    --line: #DCE3EE;
+    --ink: #101827;
+    --ink-dim: #5A6784;
+    --ink-faint: #8993AC;
+    
+    --accent: #2563EB;
+    --accent-dim: #DBEAFE;
+    --pass: #10B981;
+    --pass-dim: #D1FAE5;
+    --scrap: #EF4444;
+    --scrap-dim: #FEE2E2;
+    --hold: #F59E0B;
+    --hold-dim: #FEF3C7;
+    --rework: #8B5CF6;
+    --rework-dim: #EDE9FE;
+    
+    --radius: 8px;
+    --font-ui: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-data: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0; overflow-x: hidden;}
+  body{background:var(--navy-950); color:var(--ink); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; min-height:100vh;}
+  a{color:inherit; text-decoration:none;}
+
+  /* Mobile Header */
+  .mobile-header { display: none; background: var(--navy-900); border-bottom: 1px solid var(--line); padding: 12px 16px; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .mobile-brand { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  .hamburger { background: none; border: none; font-size: 24px; color: var(--ink); cursor: pointer; padding: 4px; }
+  .brand-mark{ width:32px;height:32px; border-radius:6px; background:var(--accent); display:flex;align-items:center;justify-content:center; font-family:var(--font-data); font-weight:700; color:#fff; font-size:14px; flex-shrink:0; }
+
+  /* Shell & Sidebar */
+  .shell{ display:grid; grid-template-columns:240px 1fr; min-height:100vh; }
+  .sidebar{ background:var(--navy-900); border-right:1px solid var(--line); padding:24px 16px; position:sticky; top:0; height:100vh; transition: transform 0.3s ease; z-index: 105; }
+  .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(16, 24, 39, 0.4); z-index: 104; opacity: 0; transition: opacity 0.3s ease; }
+  .brand{ display:flex; align-items:center; gap:10px; padding:4px 6px 22px 6px; border-bottom:1px solid var(--line); margin-bottom:18px; }
+  .brand-name{ font-size:15px; font-weight:600; line-height:1.15; }
+  .brand-sub{ font-size:11px; color:var(--ink-faint); font-family:var(--font-data); letter-spacing:.02em; }
+  .nav-group-label{ font-size:11px; color:var(--ink-faint); padding:0 10px; margin:22px 0 8px 0; font-weight: 600; text-transform: uppercase; }
+  .nav-item{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:6px; font-size:14px; color:var(--ink-dim); margin-bottom:4px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+  .nav-item:hover { background: var(--navy-950); color: var(--ink); }
+  .nav-item.active{ background:var(--navy-800); color:var(--accent); font-weight: 600; box-shadow:inset 3px 0 0 var(--accent); }
+  .nav-dot{ width:6px;height:6px; border-radius:50%; background:currentColor; opacity:.7; flex-shrink:0; }
+
+  /* Responsive (Mobile/Tablet) */
+  @media (max-width: 860px){
+    .shell{ grid-template-columns: 1fr; }
+    .mobile-header { display: flex; }
+    .sidebar { position: fixed; transform: translateX(-100%); width: 260px; }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-overlay.open { display: block; opacity: 1; }
+    .main { padding: 16px !important; }
+    .topbar { flex-direction: column; align-items: flex-start !important; gap: 12px !important;}
+    .filters { width: 100%; justify-content: space-between; }
+    .search-input, .filter-select { flex-grow: 1; width: 100%; }
+  }
+
+  /* Main Content */
+  .main{ padding:24px 32px 60px 32px; max-width:1400px; width: 100%; }
+  .topbar{ display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:24px; }
+  .topbar h1{ font-size:24px; margin:0 0 6px 0; font-weight:700; letter-spacing:-.02em; color: var(--ink); }
+  .topbar p{ margin:0; font-size:14px; color:var(--ink-dim); }
+  
+  .filters{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  
+  /* Input & Select Forms */
+  .search-input { background:var(--navy-900); border:1px solid var(--line); color:var(--ink); font-family:var(--font-ui); font-size:13.5px; font-weight:500; padding:9px 14px; border-radius:8px; width: 240px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+  .search-input::placeholder { color: var(--ink-faint); font-weight: 400; }
+  .search-input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+  select.filter-select{ background:var(--navy-900); border:1px solid var(--line); color:var(--ink); font-family:var(--font-ui); font-size:13.5px; font-weight:500; padding:9px 36px 9px 14px; border-radius:8px; cursor:pointer; appearance:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%235A6784'/></svg>"); background-repeat:no-repeat; background-position:right 14px center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+
+  /* Panel & Table */
+  .panel{ background:var(--navy-900); border:1px solid var(--line); border-radius:var(--radius); padding:20px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+  .panel-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; gap:10px; }
+  .panel-title{ font-size:15px; font-weight:600; margin:0; }
+  .panel-sub{ font-size:12.5px; color:var(--ink-dim); margin:4px 0 0 0; }
+  
+  .table-wrap{ overflow-x:auto; margin-top:8px; border-radius: 6px; border: 1px solid var(--line); }
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; min-width:760px; background: var(--navy-900); }
+  thead th{ text-align:left; font-size:12px; font-weight:600; color:var(--ink-dim); background: var(--navy-950); border-bottom:1px solid var(--line); padding:12px 14px; white-space:nowrap; }
+  tbody td{ padding:12px 14px; border-bottom:1px solid var(--line); color:var(--ink); white-space:nowrap; }
+  tbody tr:hover{ background:var(--navy-950); }
+  .mono{ font-family:var(--font-data); font-size:13px; }
+  .dim{ color:var(--ink-dim); }
+  
+  .badge{ display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; }
+  .badge::before{ content:''; width:6px; height:6px; border-radius:50%; background:currentColor; }
+  .badge.PASS{ background:var(--pass-dim); color:#047857; }
+  .badge.HOLD{ background:var(--hold-dim); color:#B45309; }
+  .badge.REWORK{ background:var(--rework-dim); color:#6D28D9; }
+  .badge.SCRAP{ background:var(--scrap-dim); color:#B91C1C; }
+
+  .empty-state{ padding:50px 20px; text-align:center; color:var(--ink-faint); font-size:14px; }
+</style>
+</head>
+<body>
+
+<!-- Mobile Header -->
+<div class="mobile-header">
+  <div class="mobile-brand">
+    <div class="brand-mark">VW</div>
+    <span>Valveworks QA</span>
+  </div>
+  <button class="hamburger" id="menuBtn">☰</button>
+</div>
+
+<div class="shell">
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">VW</div>
+      <div>
+        <div class="brand-name">Valveworks</div>
+        <div class="brand-sub">Plant 04 · QA</div>
+      </div>
+    </div>
+    <div class="nav-group-label">Quality</div>
+    <!-- เมนูลิงก์สลับหน้า (หน้า Production Log เป็น Active) -->
+    <a href="index.html"><div class="nav-item"><span class="nav-dot"></span>Dashboard</div></a>
+    <a href="production-log.html"><div class="nav-item active"><span class="nav-dot"></span>Production log</div></a>
+    <a href="#"><div class="nav-item"><span class="nav-dot"></span>NCR register</div></a>
+    <a href="#"><div class="nav-item"><span class="nav-dot"></span>Inspectors</div></a>
+    
+    <div class="nav-group-label">System</div>
+    <a href="#"><div class="nav-item"><span class="nav-dot"></span>Data sources</div></a>
+    <a href="#"><div class="nav-item"><span class="nav-dot"></span>Settings</div></a>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>Production Log</h1>
+        <p>Master record of all machined and inspected valves</p>
+      </div>
+      <div class="filters">
+        <!-- ช่องค้นหา และ ตัวกรอง -->
+        <input type="text" id="searchInput" class="search-input" placeholder="Search Serial (e.g. VV-26...)">
+        
+        <select class="filter-select" id="statusFilter">
+          <option value="all">All Statuses</option>
+          <option value="Pass">Pass</option>
+          <option value="Hold">Hold</option>
+          <option value="Rework">Rework</option>
+          <option value="Scrap">Scrap</option>
+        </select>
+
+        <select class="filter-select" id="valveFilter">
+          <option value="all">All Valve Types</option>
+          <option value="Ball Valve">Ball Valve</option>
+          <option value="Gate Valve">Gate Valve</option>
+          <option value="Check Valve">Check Valve</option>
+          <option value="Butterfly Valve">Butterfly Valve</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- ตารางบันทึกการผลิต -->
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <p class="panel-title">Inspection Records</p>
+          <p class="panel-sub" id="recordCount">Loading records...</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Valve serial</th>
+              <th>Valve type</th>
+              <th>Result</th>
+              <th>Defect type</th>
+              <th>Qty</th>
+              <th>QA inspector</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="logBody">
+             <tr><td colspan="8"><div class="empty-state">Loading data from Google Sheets...</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+/* =========================================================================
+   Mobile Sidebar Toggle Logic
+   ========================================================================= */
+document.getElementById('menuBtn').addEventListener('click', function() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebarOverlay').classList.add('open');
+});
+document.getElementById('sidebarOverlay').addEventListener('click', function() {
+  document.getElementById('sidebar').classList.remove('open');
+  this.classList.remove('open');
+});
+
+/* =========================================================================
+   DATA & FETCH LOGIC
+   ========================================================================= */
+// 🔴🔴🔴 อย่าลืมเปลี่ยนเป็น URL ของคุณเอง 🔴🔴🔴
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwCTVNr2qwtEC4iBNjeJRU8h9jec7wvOuDTBm8FMtZ0tCkzSNDEUNTdoBjB3NlDhg5p-g/exec';
+
+let ALL_RECORDS = [];
+
+function parseSheetDate(raw) {
+  const s = String(raw ?? '').trim();
+  const isoDatePrefix = s.match(/^(\d{4}-\d{2}-\d{2})/); 
+  if (isoDatePrefix) return isoDatePrefix[1];
+  const dmy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (dmy) {
+    const [, d, mo, y] = dmy;
+    return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
+  return s;
+}
+
+function normalizeStatus(s) {
+  const map = { PASS: 'Pass', HOLD: 'Hold', REWORK: 'Rework', SCRAP: 'Scrap' };
+  return map[String(s ?? '').trim().toUpperCase()] || 'Hold';
+}
+
+function normalizeRow(row) {
+  return {
+    date: parseSheetDate(row.Date),
+    serial: row.Valve_Serial,
+    valveType: row.Valve_Type,
+    inspectionResult: row.Inspection_Result,
+    defectType: (!row.Defect_Type || row.Defect_Type === 'None') ? '—' : row.Defect_Type,
+    quantity: Number(row.Quantity) > 0 ? Number(row.Quantity) : 1,
+    status: normalizeStatus(row.Status),
+    inspector: row.Inspector
+  };
+}
+
+// สร้างข้อมูลจำลอง (Mock Data) เผื่อในกรณีที่ดึงจาก Sheet ไม่สำเร็จ
+function mulberry32(seed) {
+  return function () {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rng = mulberry32(20260916);
+function generateMockData() {
+  const records = [];
+  const VALVE_TYPES = ['Ball Valve', 'Gate Valve', 'Check Valve', 'Butterfly Valve'];
+  const DEFECT_TYPES = ['Thread Flaw (เกลียวล้ม)', 'Leakage (รั่วซึม)', 'Porosity (ฟองอากาศ)', 'Dimensional Deviation (มิติเพี้ยน)', 'Surface Scratches (ผิวเป็นรอย)'];
+  const INSPECTORS = ['QA_01', 'QA_02', 'QA_03', 'QA_04', 'QA_05'];
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  
+  for (let dayOffset = 29; dayOffset >= 0; dayOffset--) {
+    const day = new Date(today); day.setDate(day.getDate() - dayOffset);
+    const dateStr = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
+    const lineCount = 15 + Math.floor(rng() * 11);
+    for (let i = 0; i < lineCount; i++) {
+      const roll = rng();
+      let status = roll < 0.80 ? 'Pass' : roll < 0.87 ? 'Hold' : roll < 0.95 ? 'Rework' : 'Scrap';
+      records.push({
+        date: dateStr,
+        serial: `VV-${dateStr.replace(/-/g,'').slice(2)}-${String(i+1).padStart(2, '0')}`,
+        valveType: VALVE_TYPES[Math.floor(rng() * VALVE_TYPES.length)],
+        inspectionResult: status === 'Pass' ? 'Pass' : 'Fail',
+        defectType: status === 'Pass' ? '—' : DEFECT_TYPES[Math.floor(rng() * DEFECT_TYPES.length)],
+        quantity: rng() < 0.85 ? 1 : 2 + Math.floor(rng() * 3),
+        status,
+        inspector: INSPECTORS[Math.floor(rng() * INSPECTORS.length)]
+      });
+    }
+  }
+  return records;
+}
+
+async function fetchProductionData() {
+  try {
+    const res = await fetch(APPS_SCRIPT_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const rows = await res.json();
+    return rows.map(normalizeRow);
+  } catch (err) {
+    console.warn('Fetch failed, using mock data:', err);
+    return generateMockData();
+  }
+}
+
+/* =========================================================================
+   TABLE RENDERING & FILTERING
+   ========================================================================= */
+function renderTable() {
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+  const statusFilter = document.getElementById('statusFilter').value;
+  const valveFilter = document.getElementById('valveFilter').value;
+
+  // กรองข้อมูลตามที่ผู้ใช้เลือก
+  const filteredData = ALL_RECORDS.filter(r => {
+    const matchSearch = r.serial.toLowerCase().includes(searchTerm);
+    const matchStatus = statusFilter === 'all' || r.status === statusFilter;
+    const matchValve = valveFilter === 'all' || r.valveType === valveFilter;
+    return matchSearch && matchStatus && matchValve;
+  });
+
+  // เรียงลำดับจากวันที่ใหม่สุดไปเก่าสุด
+  filteredData.sort((a, b) => b.date.localeCompare(a.date));
+
+  document.getElementById('recordCount').textContent = `Showing ${filteredData.length.toLocaleString('en-US')} records`;
+
+  const body = document.getElementById('logBody');
+  if (!filteredData.length) {
+    body.innerHTML = `<tr><td colspan="8"><div class="empty-state">No records found matching your criteria.</div></td></tr>`;
+    return;
+  }
+
+  body.innerHTML = filteredData.map(r => {
+    const statusKey = r.status.toUpperCase();
+    return `
+    <tr>
+      <td class="mono dim">${r.date}</td>
+      <td class="mono" style="color:var(--accent); font-weight:600;">${r.serial}</td>
+      <td>${r.valveType}</td>
+      <td style="font-weight: 500;">${r.inspectionResult}</td>
+      <td title="${r.defectType}">${r.defectType}</td>
+      <td class="mono">${r.quantity}</td>
+      <td>${r.inspector}</td>
+      <td><span class="badge ${statusKey}">${statusKey}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// เริ่มต้นทำงาน (โหลดข้อมูล และ ผูก Event)
+(async function init() {
+  ALL_RECORDS = await fetchProductionData();
+  renderTable();
+
+  document.getElementById('searchInput').addEventListener('input', renderTable);
+  document.getElementById('statusFilter').addEventListener('change', renderTable);
+  document.getElementById('valveFilter').addEventListener('change', renderTable);
+})();
+</script>
+</body>
+</html>
