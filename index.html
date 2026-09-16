@@ -242,7 +242,7 @@
 
 <script>
 // 🔴 อย่าลืมนำ Apps Script URL ของคุณมาใส่ตรงนี้แทนนะครับ 🔴
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwCTVNr2qwtEC4iBNjeJRU8h9jec7wvOuDTBm8FMtZ0tCkzSNDEUNTdoBjB3NlDhg5p-g/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz8ssJrtda7lcw05VKy-XRx2_64eKyohm2PDPTBa7XgNg1X5kOb3lyOtPpmj2iqFqWY0g/exec';
 
 const VALVE_TYPES = ['Ball Valve', 'Gate Valve', 'Check Valve', 'Butterfly Valve'];
 const DEFECT_TYPES = ['Thread Flaw (เกลียวล้ม)', 'Leakage (รั่วซึม)', 'Porosity (ฟองอากาศ)', 'Dimensional Deviation (มิติเพี้ยน)', 'Surface Scratches (ผิวเป็นรอย)'];
@@ -534,20 +534,44 @@ function renderTable() {
     </tr>`;
   }).join('');
 
-  body.querySelectorAll('.action-select').forEach(sel => {
-    sel.addEventListener('change', (e) => {
+ body.querySelectorAll('.action-select').forEach(sel => {
+    sel.addEventListener('change', async (e) => {
       const serial = e.target.getAttribute('data-serial');
-      const newStatus = e.target.value;
-      const record = ALL_RECORDS.find(r => r.serial === serial);
-      if (record) {
-        record.status = newStatus.charAt(0) + newStatus.slice(1).toLowerCase();
-        showToast(`${serial} moved to ${newStatus}`);
-        renderAll();
+      const newStatus = e.target.value; // จะได้เป็นคำว่า HOLD, REWORK หรือ SCRAP
+      
+      // แสดงข้อความบอกผู้ใช้ว่ากำลังอัปเดต
+      showToast(`Updating ${serial} to ${newStatus}...`);
+      
+      try {
+        // ส่งข้อมูลไปหา Google Apps Script แบบ Background
+        const response = await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          // ใส่แบบ text/plain ป้องกันปัญหา Google บล็อกการยิงข้ามโดเมน (CORS Preflight)
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ serial: serial, status: newStatus })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          // ถ้า Sheet อัปเดตสำเร็จ ให้อัปเดตข้อมูลบนหน้าเว็บและคำนวณกราฟใหม่
+          const record = ALL_RECORDS.find(r => r.serial === serial);
+          if (record) {
+            // แปลงคำให้ตัวแรกเป็นพิมพ์ใหญ่ เช่น 'REWORK' -> 'Rework'
+            record.status = newStatus.charAt(0) + newStatus.slice(1).toLowerCase();
+          }
+          showToast(`${serial} updated successfully!`);
+          renderAll(); 
+        } else {
+          throw new Error(result.error);
+        }
+      } catch (err) {
+        console.error(err);
+        showToast(`Failed to update ${serial}`);
+        renderAll(); // รีเฟรชให้ค่า Dropdown กลับไปเป็นของเดิมถ้าอัปเดตไม่สำเร็จ
       }
     });
   });
-}
-
 function showToast(msg) {
   const toast = document.getElementById('toast');
   document.getElementById('toastMsg').textContent = msg;
