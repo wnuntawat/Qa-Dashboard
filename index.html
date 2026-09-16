@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<!-- แก้ไข 1: เปลี่ยนลิงก์โหลดกราฟให้เสถียรขึ้น ป้องกันการถูกบล็อก -->
+<!-- เปลี่ยนลิงก์โหลดกราฟให้เสถียรขึ้น ป้องกันการถูกบล็อก -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
   :root{
@@ -26,6 +26,11 @@
       --line:#DCE3EE; --ink:#101827; --ink-dim:#5A6784; --ink-faint:#8993AC;
       --accent-dim:#DCE7FF; --pass-dim:#DEF3E9; --scrap-dim:#FBE1E2; --hold-dim:#FCEBD2; --rework-dim:#EAE3FB;
     }
+  }
+  :root[data-theme="light"]{
+    --navy-950:#EEF1F6; --navy-900:#FFFFFF; --navy-800:#F6F8FB; --navy-700:#EAEEF5;
+    --line:#DCE3EE; --ink:#101827; --ink-dim:#5A6784; --ink-faint:#8993AC;
+    --accent-dim:#DCE7FF; --pass-dim:#DEF3E9; --scrap-dim:#FBE1E2; --hold-dim:#FCEBD2; --rework-dim:#EAE3FB;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -241,7 +246,7 @@
 <div id="toast"><span class="dot"></span><span id="toastMsg">Status updated</span></div>
 
 <script>
-// 🔴 อย่าลืมนำ Apps Script URL ของคุณมาใส่ตรงนี้แทนนะครับ 🔴
+// URL ของ Apps Script คุณ (คงไว้ตามเดิม)
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbywdfLsfw7GO-oAeE33MxipGqoFVPYgWmc7dVAzwuN-22i1Kw8UDfWdXB1-RcluD0at3Q/exec';
 
 const VALVE_TYPES = ['Ball Valve', 'Gate Valve', 'Check Valve', 'Butterfly Valve'];
@@ -280,7 +285,6 @@ function normalizeRow(row) {
   };
 }
 
-// ข้อมูลจำลองเมื่อต่อ Google Sheet ไม่ติด
 function mulberry32(seed) {
   return function () {
     seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
@@ -340,9 +344,6 @@ function setSyncStatus(isLive, label) {
   }
 }
 
-/* =========================================================================
-   STATE + FILTERING
-   ========================================================================= */
 let ALL_RECORDS = [];
 let state = { range: '7d', valveType: 'all' };
 
@@ -363,9 +364,6 @@ function fmtInt(n) { return n.toLocaleString('en-US'); }
 function fmtPct(n) { return `${n.toFixed(1)}%`; }
 function sumQty(rows) { return rows.reduce((s, r) => s + (r.quantity || 1), 0); }
 
-/* =========================================================================
-   RENDER — KPI CARDS
-   ========================================================================= */
 function renderKpis() {
   const rows = filteredRecords();
   const total = sumQty(rows);
@@ -391,9 +389,6 @@ function renderKpis() {
   `).join('');
 }
 
-/* =========================================================================
-   RENDER — CHARTS
-   ========================================================================= */
 let paretoChartInstance, donutChartInstance, trendChartInstance;
 
 const CHART_TEXT = () => getComputedStyle(document.body).getPropertyValue('--ink-dim').trim() || '#93A1BC';
@@ -499,9 +494,6 @@ function renderTrend() {
   else trendChartInstance = new Chart(ctx, { type: 'line', data, options: opts });
 }
 
-/* =========================================================================
-   RENDER — NCR TABLE
-   ========================================================================= */
 function renderTable() {
   const rows = filteredRecords().filter(r => r.status !== 'Pass').sort((a, b) => b.date.localeCompare(a.date)).slice(0, 60);
 
@@ -534,19 +526,16 @@ function renderTable() {
     </tr>`;
   }).join('');
 
- body.querySelectorAll('.action-select').forEach(sel => {
+  body.querySelectorAll('.action-select').forEach(sel => {
     sel.addEventListener('change', async (e) => {
       const serial = e.target.getAttribute('data-serial');
-      const newStatus = e.target.value; // จะได้เป็นคำว่า HOLD, REWORK หรือ SCRAP
+      const newStatus = e.target.value; 
       
-      // แสดงข้อความบอกผู้ใช้ว่ากำลังอัปเดต
       showToast(`Updating ${serial} to ${newStatus}...`);
       
       try {
-        // ส่งข้อมูลไปหา Google Apps Script แบบ Background
         const response = await fetch(APPS_SCRIPT_URL, {
           method: 'POST',
-          // ใส่แบบ text/plain ป้องกันปัญหา Google บล็อกการยิงข้ามโดเมน (CORS Preflight)
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ serial: serial, status: newStatus })
         });
@@ -554,10 +543,8 @@ function renderTable() {
         const result = await response.json();
         
         if (result.success) {
-          // ถ้า Sheet อัปเดตสำเร็จ ให้อัปเดตข้อมูลบนหน้าเว็บและคำนวณกราฟใหม่
           const record = ALL_RECORDS.find(r => r.serial === serial);
           if (record) {
-            // แปลงคำให้ตัวแรกเป็นพิมพ์ใหญ่ เช่น 'REWORK' -> 'Rework'
             record.status = newStatus.charAt(0) + newStatus.slice(1).toLowerCase();
           }
           showToast(`${serial} updated successfully!`);
@@ -568,10 +555,12 @@ function renderTable() {
       } catch (err) {
         console.error(err);
         showToast(`Failed to update ${serial}`);
-        renderAll(); // รีเฟรชให้ค่า Dropdown กลับไปเป็นของเดิมถ้าอัปเดตไม่สำเร็จ
+        renderAll();
       }
     });
   });
+} // <--- จุดนี้คือปีกกา } ที่หายไปครับ ระบบจึงกลับมาทำงานได้ปกติ
+
 function showToast(msg) {
   const toast = document.getElementById('toast');
   document.getElementById('toastMsg').textContent = msg;
@@ -604,11 +593,8 @@ function renderClock() {
   document.getElementById('clockLine').textContent = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-/* =========================================================================
-   แก้ไข 2: ใส่ Try-Catch ป้องกันระบบพังทั้งหมดเวลากราฟบางตัวติดปัญหา
-   ========================================================================= */
 function renderAll() {
-  renderKpis(); // ส่วนกล่องตัวเลขด้านบน (มักจะไม่ค่อยพัง)
+  renderKpis(); 
   
   try { renderPareto(); } catch (e) { console.error("Pareto chart failed to render", e); }
   try { renderDonut(); } catch (e) { console.error("Donut chart failed to render", e); }
