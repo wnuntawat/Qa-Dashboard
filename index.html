@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- โหลด Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
   :root{
@@ -36,12 +37,12 @@
   body{background:var(--navy-950); color:var(--ink); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; min-height:100vh;}
   a{color:inherit; text-decoration:none;}
 
-  /* --- เพิ่ม: ส่วนหัวสำหรับมือถือ (Mobile Header) --- */
+  /* --- Mobile Header --- */
   .mobile-header { display: none; background: var(--navy-900); border-bottom: 1px solid var(--line); padding: 12px 16px; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
   .mobile-brand { display: flex; align-items: center; gap: 10px; font-weight: 600; color: var(--ink); }
   .hamburger { background: none; border: none; font-size: 24px; color: var(--ink); cursor: pointer; padding: 4px; }
 
-  /* --- แก้ไข: Shell & Sidebar --- */
+  /* --- Shell & Sidebar --- */
   .shell{display:grid; grid-template-columns:240px minmax(0, 1fr); min-height:100vh;}
   .sidebar{background:var(--navy-900); border-right:1px solid var(--line); padding:24px 16px; position:sticky; top:0; height:100vh; transition: transform 0.3s ease; z-index: 105;}
   .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(16, 24, 39, 0.4); z-index: 104; opacity: 0; transition: opacity 0.3s ease; }
@@ -58,7 +59,7 @@
   .status-live{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
   .status-live-dot{width:6px;height:6px;border-radius:50%;background:var(--pass);box-shadow:0 0 0 3px var(--pass-dim);}
 
-  /* --- เพิ่ม: Responsive สำหรับมือถือ --- */
+  /* --- Responsive Mobile --- */
   @media (max-width: 860px){
     .shell{ grid-template-columns: 1fr; }
     .mobile-header { display: flex; }
@@ -72,7 +73,6 @@
   }
 
   .main{padding:24px 32px 60px 32px; max-width:1400px; width: 100%; min-width: 0;}
-
   .topbar{display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:22px;}
   .topbar h1{font-size:21px; margin:0 0 4px 0; font-weight:600; letter-spacing:-.01em;}
   .topbar p{margin:0; font-size:13px; color:var(--ink-dim);}
@@ -84,6 +84,7 @@
   .icon-btn{background:var(--navy-900); border:1px solid var(--line); color:var(--ink-dim); width:34px;height:34px; border-radius:6px; display:flex;align-items:center;justify-content:center; cursor:pointer; font-size:14px;}
   .icon-btn:hover{color:var(--ink);}
 
+  /* --- KPI Cards with YoY Trend --- */
   .kpi-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px;}
   @media (max-width:1000px){ .kpi-grid{grid-template-columns:repeat(2,1fr);} }
   @media (max-width:520px){ .kpi-grid{grid-template-columns:1fr;} }
@@ -93,8 +94,14 @@
   .kpi-badge{font-size:10.5px; font-family:var(--font-data); padding:2px 7px; border-radius:10px; background:var(--kpi-bg,var(--navy-800)); color:var(--kpi-color,var(--ink-dim)); white-space:nowrap;}
   .kpi-value{font-family:var(--font-data); font-size:30px; font-weight:600; line-height:1; color:var(--ink);}
   .kpi-value .unit{font-size:16px;color:var(--ink-faint);font-weight:500;margin-left:2px;}
-  .kpi-foot{margin-top:10px; font-size:11.5px; color:var(--ink-faint);}
+  
+  /* สีลูกศรและข้อความเปรียบเทียบ YoY */
+  .kpi-foot{margin-top:10px; font-size:11.5px; display:flex; align-items:center; gap:4px; font-family: var(--font-ui);}
+  .color-good { color: var(--pass); font-weight: 600; }
+  .color-bad { color: var(--scrap); font-weight: 600; }
+  .trend-neutral { color: var(--ink-faint); font-weight: 500; }
 
+  /* Panels & Charts */
   .panel{background:var(--navy-900); border:1px solid var(--line); border-radius:var(--radius); padding:18px;}
   .panel-head{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; gap:10px;}
   .panel-title{font-size:14px;font-weight:600;margin:0;}
@@ -115,6 +122,7 @@
   .donut-legend-item .sw{width:9px;height:9px;border-radius:2px;}
   .donut-legend-item .n{font-family:var(--font-data);color:var(--ink);}
 
+  /* Table */
   .table-panel{margin-top:4px;}
   .table-wrap{overflow-x:auto;margin-top:4px;}
   table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px;}
@@ -139,47 +147,27 @@
 </head>
 <body>
 
-<!-- เพิ่ม Mobile Header -->
 <div class="mobile-header">
-  <div class="mobile-brand">
-    <div class="brand-mark">VW</div>
-    <span>Valveworks QA</span>
-  </div>
+  <div class="mobile-brand"><div class="brand-mark">VW</div><span>Valveworks QA</span></div>
   <button class="hamburger" id="menuBtn">☰</button>
 </div>
 
 <div class="shell">
-  <!-- เพิ่ม Overlay ป้องกันหลังเมนูเวลากดในมือถือ -->
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <aside class="sidebar" id="sidebar">
     <div class="brand">
       <div class="brand-mark">VW</div>
-      <div>
-        <div class="brand-name">Valveworks</div>
-        <div class="brand-sub">Plant 04 · QA</div>
-      </div>
+      <div><div class="brand-name">Valveworks</div><div class="brand-sub">Plant 04 · QA</div></div>
     </div>
     <div class="nav-group-label">Quality</div>
-    <a href="index.html">
-      <div class="nav-item active"><span class="nav-dot"></span>Dashboard</div>
-    </a>
-    <a href="production-log.html">
-      <div class="nav-item"><span class="nav-dot"></span>Production log</div>
-    </a>
-    <a href="ncr-register.html">
-      <div class="nav-item"><span class="nav-dot"></span>NCR register</div>
-    </a>
-    <a href="inspectors.html">
-      <div class="nav-item"><span class="nav-dot"></span>Inspectors</div>
-    </a>
+    <a href="index.html"><div class="nav-item active"><span class="nav-dot"></span>Dashboard</div></a>
+    <a href="production-log.html"><div class="nav-item"><span class="nav-dot"></span>Production log</div></a>
+    <a href="ncr-register.html"><div class="nav-item"><span class="nav-dot"></span>NCR register</div></a>
+    <a href="inspectors.html"><div class="nav-item"><span class="nav-dot"></span>Inspectors</div></a>
     <div class="nav-group-label">System</div>
-     <a href="data-sources.html">
-    <div class="nav-item"><span class="nav-dot"></span>Data sources</div>
-     </a>
-    <a href="settings.html">
-    <div class="nav-item"><span class="nav-dot"></span>Settings</div>
-     </a>
+    <a href="data-sources.html"><div class="nav-item"><span class="nav-dot"></span>Data sources</div></a>
+    <a href="settings.html"><div class="nav-item"><span class="nav-dot"></span>Settings</div></a>
     <div class="sidebar-foot">
       <div class="status-live"><span class="status-live-dot"></span><span id="syncStatusText">Connecting...</span></div>
       <div id="clockLine">—</div>
@@ -197,6 +185,7 @@
           <button data-range="today">Today</button>
           <button data-range="7d" class="active">Last 7 days</button>
           <button data-range="30d">Last 30 days</button>
+          <button data-range="ytd">YTD</button> <!-- เพิ่มปุ่ม YTD ที่นี่ -->
         </div>
         <select class="filter-select" id="valveFilter">
           <option value="all">All valve types</option>
@@ -279,7 +268,7 @@
 <div id="toast"><span class="dot"></span><span id="toastMsg">Status updated</span></div>
 
 <script>
-/* --- ฟังก์ชันควบคุมเมนูมือถือ --- */
+/* --- เมนูสำหรับมือถือ --- */
 document.getElementById('menuBtn').addEventListener('click', function() {
   document.getElementById('sidebar').classList.add('open');
   document.getElementById('sidebarOverlay').classList.add('open');
@@ -289,7 +278,7 @@ document.getElementById('sidebarOverlay').addEventListener('click', function() {
   this.classList.remove('open');
 });
 
-// URL ของ Apps Script คุณ (คงไว้ตามเดิม)
+// 🔴 อย่าลืมนำ Apps Script URL ของคุณมาใส่ตรงนี้แทนนะครับ 🔴
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbywdfLsfw7GO-oAeE33MxipGqoFVPYgWmc7dVAzwuN-22i1Kw8UDfWdXB1-RcluD0at3Q/exec';
 
 const VALVE_TYPES = ['Ball Valve', 'Gate Valve', 'Check Valve', 'Butterfly Valve'];
@@ -308,58 +297,48 @@ function parseSheetDate(raw) {
   const isoDatePrefix = s.match(/^(\d{4}-\d{2}-\d{2})/); 
   if (isoDatePrefix) return isoDatePrefix[1];
   const dmy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (dmy) {
-    const [, d, mo, y] = dmy;
-    return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-  }
+  if (dmy) { const [, d, mo, y] = dmy; return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`; }
   return s;
 }
 
 function normalizeRow(row) {
   return {
-    date: parseSheetDate(row.Date),
-    serial: row.Valve_Serial,
-    valveType: row.Valve_Type,
-    inspectionResult: row.Inspection_Result,
-    defectType: (!row.Defect_Type || row.Defect_Type === 'None') ? '—' : row.Defect_Type,
-    quantity: Number(row.Quantity) > 0 ? Number(row.Quantity) : 1,
-    status: normalizeStatus(row.Status),
-    inspector: row.Inspector
+    date: parseSheetDate(row.Date), serial: row.Valve_Serial, valveType: row.Valve_Type,
+    inspectionResult: row.Inspection_Result, defectType: (!row.Defect_Type || row.Defect_Type === 'None') ? '—' : row.Defect_Type,
+    quantity: Number(row.Quantity) > 0 ? Number(row.Quantity) : 1, status: normalizeStatus(row.Status), inspector: row.Inspector
   };
 }
 
 function mulberry32(seed) {
-  return function () {
-    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
+  return function () { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 }
 const rng = mulberry32(20260916);
 
+// สร้าง Mock Data จำลองครอบคลุม 1 ปี เพื่อให้ปุ่ม YTD/YoY ทำงานได้ถ้า Sheet ล่ม
 function generateMockData() {
   const records = [];
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  for (let dayOffset = 29; dayOffset >= 0; dayOffset--) {
+  const offsets = [];
+  
+  // สุ่มเฉพาะวันที่จำเป็น (30 วันล่าสุด, 30 วันของปีที่แล้ว, และรายสัปดาห์แบบ YTD)
+  for (let i = 0; i < 30; i++) { offsets.push(i); offsets.push(i + 365); }
+  for (let i = 30; i < 200; i += 3) { offsets.push(i); offsets.push(i + 365); }
+
+  offsets.forEach(dayOffset => {
     const day = new Date(today); day.setDate(day.getDate() - dayOffset);
     const dateStr = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
-    const lineCount = 15 + Math.floor(rng() * 11); 
+    const lineCount = 5 + Math.floor(rng() * 8); 
     for (let i = 0; i < lineCount; i++) {
       const valveType = VALVE_TYPES[Math.floor(rng() * VALVE_TYPES.length)];
       const roll = rng();
       let status = roll < 0.80 ? 'Pass' : roll < 0.87 ? 'Hold' : roll < 0.95 ? 'Rework' : 'Scrap';
       records.push({
-        date: dateStr,
-        serial: `VV-${dateStr.replace(/-/g,'').slice(2)}-${String(i+1).padStart(2, '0')}`,
-        valveType,
-        inspectionResult: status === 'Pass' ? 'Pass' : 'Fail',
-        defectType: status === 'Pass' ? '—' : DEFECT_TYPES[Math.floor(rng() * DEFECT_TYPES.length)],
-        quantity: rng() < 0.85 ? 1 : 2 + Math.floor(rng() * 3),
-        status, inspector: INSPECTORS[Math.floor(rng() * INSPECTORS.length)]
+        date: dateStr, serial: `VV-${dateStr.replace(/-/g,'').slice(2)}-${String(i+1).padStart(2, '0')}`, valveType,
+        inspectionResult: status === 'Pass' ? 'Pass' : 'Fail', defectType: status === 'Pass' ? '—' : DEFECT_TYPES[Math.floor(rng() * DEFECT_TYPES.length)],
+        quantity: rng() < 0.85 ? 1 : 2 + Math.floor(rng() * 3), status, inspector: INSPECTORS[Math.floor(rng() * INSPECTORS.length)]
       });
     }
-  }
+  });
   return records;
 }
 
@@ -390,37 +369,84 @@ function setSyncStatus(isLive, label) {
 let ALL_RECORDS = [];
 let state = { range: '7d', valveType: 'all' };
 
-function inRange(dateStr, range) {
+/* --- ฟังก์ชันเปรียบเทียบเวลาแบบเพิ่มออฟเซ็ตปี (เพื่อคิด YoY) --- */
+function inRange(dateStr, range, offsetYears = 0) {
   const d = new Date(dateStr + 'T00:00:00');
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const diffDays = Math.round((today - d) / 86400000);
-  if (range === 'today') return diffDays === 0;
-  if (range === '7d') return diffDays >= 0 && diffDays < 7;
-  return diffDays >= 0 && diffDays < 30;
+  const targetDate = new Date(); targetDate.setHours(0, 0, 0, 0);
+  
+  // ถอยเวลาไปตามที่กำหนด เช่น offsetYears = 1 แปลว่าให้ถอยไปเช็คของปีที่แล้ว
+  targetDate.setFullYear(targetDate.getFullYear() - offsetYears);
+
+  if (range === 'today') return d.getTime() === targetDate.getTime();
+  if (range === '7d') {
+    const diffDays = Math.round((targetDate - d) / 86400000);
+    return diffDays >= 0 && diffDays < 7;
+  }
+  if (range === '30d') {
+    const diffDays = Math.round((targetDate - d) / 86400000);
+    return diffDays >= 0 && diffDays < 30;
+  }
+  if (range === 'ytd') {
+    // วันที่ 1 ม.ค. ของปีเป้าหมาย ถึงวันที่ปัจจุบันของปีนั้น
+    const startOfYear = new Date(targetDate.getFullYear(), 0, 1);
+    return d >= startOfYear && d <= targetDate;
+  }
+  return false;
 }
 
-function filteredRecords() {
-  return ALL_RECORDS.filter(r => inRange(r.date, state.range) && (state.valveType === 'all' || r.valveType === state.valveType));
+function filteredRecords(offsetYears = 0) {
+  return ALL_RECORDS.filter(r => inRange(r.date, state.range, offsetYears) && (state.valveType === 'all' || r.valveType === state.valveType));
 }
 
 function fmtInt(n) { return n.toLocaleString('en-US'); }
 function fmtPct(n) { return `${n.toFixed(1)}%`; }
 function sumQty(rows) { return rows.reduce((s, r) => s + (r.quantity || 1), 0); }
 
+/* --- การคำนวณ YoY และวาดลง KPI Cards --- */
 function renderKpis() {
-  const rows = filteredRecords();
-  const total = sumQty(rows);
-  const pass = sumQty(rows.filter(r => r.status === 'Pass'));
-  const scrap = sumQty(rows.filter(r => r.status === 'Scrap'));
-  const hold = sumQty(rows.filter(r => r.status === 'Hold'));
-  const fty = total ? (pass / total) * 100 : 0;
-  const defectRate = total ? (scrap / total) * 100 : 0;
+  // ดึงข้อมูลช่วงปัจจุบัน
+  const currRows = filteredRecords(0);
+  const cTotal = sumQty(currRows);
+  const cPass = sumQty(currRows.filter(r => r.status === 'Pass'));
+  const cScrap = sumQty(currRows.filter(r => r.status === 'Scrap'));
+  const cHold = sumQty(currRows.filter(r => r.status === 'Hold'));
+  const cFty = cTotal ? (cPass / cTotal) * 100 : 0;
+  const cDefect = cTotal ? (cScrap / cTotal) * 100 : 0;
+
+  // ดึงข้อมูลช่วงเดียวกันของปีที่แล้ว (YoY)
+  const prevRows = filteredRecords(1);
+  const pTotal = sumQty(prevRows);
+  const pPass = sumQty(prevRows.filter(r => r.status === 'Pass'));
+  const pScrap = sumQty(prevRows.filter(r => r.status === 'Scrap'));
+  const pHold = sumQty(prevRows.filter(r => r.status === 'Hold'));
+  const pFty = pTotal ? (pPass / pTotal) * 100 : 0;
+  const pDefect = pTotal ? (pScrap / pTotal) * 100 : 0;
+
+  // ฟังก์ชันคำนวณและสร้างสีลูกศร
+  const formatTrend = (curr, prev, mode, invertColor = false) => {
+    // ถ้าไม่มีข้อมูลในอดีต (เช่น ใน Sheet มีแค่ข้อมูลเดือนนี้) ให้โชว์คำเตือน
+    if (pTotal === 0) return `<span class="trend-neutral">— No prior data</span>`;
+    
+    let diff = curr - prev;
+    if (mode === 'relative') { diff = prev ? ((curr - prev) / prev) * 100 : 0; }
+    if (Math.abs(diff) < 0.1) return `<span class="trend-neutral">0% vs Last Year</span>`;
+    
+    let sign = diff > 0 ? '▲' : '▼';
+    let colorClass = diff > 0 ? 'color-good' : 'color-bad';
+    
+    // กฎพิเศษ: ถ้าของเสียเยอะขึ้น (diff > 0) ถือว่าเป็นเรื่องแย่ (color-bad / สีแดง)
+    if (invertColor) colorClass = diff > 0 ? 'color-bad' : 'color-good';
+    
+    return `<span class="${colorClass}">${sign} ${Math.abs(diff).toFixed(1)}%</span> <span class="trend-neutral">vs Last Year</span>`;
+  };
+
+  const rangeLabels = { today: 'Today', '7d': '7 days', '30d': '30 days', 'ytd': 'YTD' };
 
   const cards = [
-    { label: 'Total produced', value: fmtInt(total), unit: 'units', color: 'var(--accent)', bg: 'var(--accent-dim)', badge: {today: 'Today', '7d': '7 days', '30d': '30 days'}[state.range], foot: `${state.valveType === 'all' ? 'All valve types' : state.valveType}` },
-    { label: 'First time yield', value: fmtPct(fty), unit: '', color: 'var(--pass)', bg: 'var(--pass-dim)', badge: fty >= 95 ? 'On target' : 'Below target', foot: `${fmtInt(pass)} passed without rework` },
-    { label: 'Defect rate (scrap)', value: fmtPct(defectRate), unit: '', color: 'var(--scrap)', bg: 'var(--scrap-dim)', badge: defectRate <= 3 ? 'In control' : 'Elevated', foot: `${fmtInt(scrap)} units scrapped` },
-    { label: 'Items on hold', value: fmtInt(hold), unit: 'NCR', color: 'var(--hold)', bg: 'var(--hold-dim)', badge: 'Needs review', foot: 'Withheld pending disposition' }
+    { label: 'Total produced', value: fmtInt(cTotal), unit: 'units', color: 'var(--accent)', bg: 'var(--accent-dim)', badge: rangeLabels[state.range], foot: formatTrend(cTotal, pTotal, 'relative') },
+    { label: 'First time yield', value: fmtPct(cFty), unit: '', color: 'var(--pass)', bg: 'var(--pass-dim)', badge: cFty >= 95 ? 'On target' : 'Below target', foot: formatTrend(cFty, pFty, 'absolute') },
+    { label: 'Defect rate (scrap)', value: fmtPct(cDefect), unit: '', color: 'var(--scrap)', bg: 'var(--scrap-dim)', badge: cDefect <= 3 ? 'In control' : 'Elevated', foot: formatTrend(cDefect, pDefect, 'absolute', true) },
+    { label: 'Items on hold', value: fmtInt(cHold), unit: 'NCR', color: 'var(--hold)', bg: 'var(--hold-dim)', badge: 'Needs review', foot: formatTrend(cHold, pHold, 'relative', true) }
   ];
 
   document.getElementById('kpiGrid').innerHTML = cards.map(c => `
@@ -433,12 +459,11 @@ function renderKpis() {
 }
 
 let paretoChartInstance, donutChartInstance, trendChartInstance;
-
 const CHART_TEXT = () => getComputedStyle(document.body).getPropertyValue('--ink-dim').trim() || '#93A1BC';
 const CHART_LINE = () => getComputedStyle(document.body).getPropertyValue('--line').trim() || '#28324A';
 
 function renderPareto() {
-  const rows = filteredRecords().filter(r => r.status !== 'Pass');
+  const rows = filteredRecords(0).filter(r => r.status !== 'Pass');
   const counts = {};
   DEFECT_TYPES.forEach(d => counts[d] = 0);
   rows.forEach(r => { if (counts[r.defectType] !== undefined) counts[r.defectType] += (r.quantity || 1); });
@@ -461,10 +486,7 @@ function renderPareto() {
 
   const opts = {
     responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-    plugins: {
-      legend: { labels: { color: CHART_TEXT(), boxWidth: 10, font: { family: 'IBM Plex Sans', size: 11 } } },
-      tooltip: { backgroundColor: '#111A2C', borderColor: CHART_LINE(), borderWidth: 1, titleColor: '#fff', bodyColor: '#fff' }
-    },
+    plugins: { legend: { labels: { color: CHART_TEXT(), boxWidth: 10, font: { family: 'IBM Plex Sans', size: 11 } } }, tooltip: { backgroundColor: '#111A2C', borderColor: CHART_LINE(), borderWidth: 1, titleColor: '#fff', bodyColor: '#fff' } },
     scales: {
       x: { ticks: { color: CHART_TEXT(), font: { size: 10.5 }, maxRotation: 14, minRotation: 0 }, grid: { display: false } },
       y: { position: 'left', ticks: { color: CHART_TEXT() }, grid: { color: CHART_LINE() }, title: { display: true, text: 'Units', color: CHART_TEXT(), font: { size: 11 } } },
@@ -479,9 +501,8 @@ function renderPareto() {
 const DONUT_COLORS = { 'Ball Valve': '#4C82F7', 'Gate Valve': '#3FB27F', 'Check Valve': '#F2A93B', 'Butterfly Valve': '#9B7BEA' };
 
 function renderDonut() {
-  const rows = filteredRecords().filter(r => r.status !== 'Pass');
-  const counts = {};
-  VALVE_TYPES.forEach(v => counts[v] = 0);
+  const rows = filteredRecords(0).filter(r => r.status !== 'Pass');
+  const counts = {}; VALVE_TYPES.forEach(v => counts[v] = 0);
   rows.forEach(r => { counts[r.valveType] += (r.quantity || 1); });
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
 
@@ -504,6 +525,7 @@ function renderTrend() {
   const note = state.valveType === 'all' ? '' : ` · ${state.valveType}`;
   document.getElementById('trendValveNote').textContent = note;
 
+  // 📝 กราฟเส้น จะคงไว้ที่ 30 วันย้อนหลังเสมอ (ไม่ว่าผู้ใช้จะกดปุ่มเวลา YTD ก็ตาม)
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const days = [];
   for (let i = 29; i >= 0; i--) {
@@ -538,7 +560,7 @@ function renderTrend() {
 }
 
 function renderTable() {
-  const rows = filteredRecords().filter(r => r.status !== 'Pass').sort((a, b) => b.date.localeCompare(a.date)).slice(0, 60);
+  const rows = filteredRecords(0).filter(r => r.status !== 'Pass').sort((a, b) => b.date.localeCompare(a.date)).slice(0, 60);
 
   document.getElementById('tableCount').textContent = `${fmtInt(rows.length)} open lines · ${fmtInt(sumQty(rows))} units`;
   const body = document.getElementById('ncrBody');
@@ -573,33 +595,20 @@ function renderTable() {
     sel.addEventListener('change', async (e) => {
       const serial = e.target.getAttribute('data-serial');
       const newStatus = e.target.value; 
-      
       showToast(`Updating ${serial} to ${newStatus}...`);
-      
       try {
         const response = await fetch(APPS_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ serial: serial, status: newStatus })
         });
-        
         const result = await response.json();
-        
         if (result.success) {
           const record = ALL_RECORDS.find(r => r.serial === serial);
-          if (record) {
-            record.status = newStatus.charAt(0) + newStatus.slice(1).toLowerCase();
-          }
+          if (record) record.status = newStatus.charAt(0) + newStatus.slice(1).toLowerCase();
           showToast(`${serial} updated successfully!`);
           renderAll(); 
-        } else {
-          throw new Error(result.error);
-        }
-      } catch (err) {
-        console.error(err);
-        showToast(`Failed to update ${serial}`);
-        renderAll();
-      }
+        } else throw new Error(result.error);
+      } catch (err) { console.error(err); showToast(`Failed to update ${serial}`); renderAll(); }
     });
   });
 }
@@ -620,11 +629,9 @@ function setupFilters() {
     state.range = btn.getAttribute('data-range');
     renderAll();
   });
-
   const valveSelect = document.getElementById('valveFilter');
   VALVE_TYPES.forEach(v => valveSelect.appendChild(new Option(v, v)));
   valveSelect.addEventListener('change', (e) => { state.valveType = e.target.value; renderAll(); });
-
   document.getElementById('refreshBtn').addEventListener('click', async () => {
     showToast('Refreshing from data source…');
     ALL_RECORDS = await fetchProductionData();
@@ -632,28 +639,19 @@ function setupFilters() {
   });
 }
 
-function renderClock() {
-  document.getElementById('clockLine').textContent = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
+function renderClock() { document.getElementById('clockLine').textContent = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
 
 function renderAll() {
   renderKpis(); 
-  
   try { renderPareto(); } catch (e) { console.error("Pareto chart failed to render", e); }
   try { renderDonut(); } catch (e) { console.error("Donut chart failed to render", e); }
   try { renderTrend(); } catch (e) { console.error("Trend chart failed to render", e); }
-  try { renderTable(); } catch (e) { 
-    console.error("Table failed to render", e); 
-    document.getElementById('tableStatus').textContent = "Error rendering table.";
-  }
+  try { renderTable(); } catch (e) { console.error("Table failed to render", e); document.getElementById('tableStatus').textContent = "Error rendering table."; }
 }
 
 (async function init() {
-  setupFilters();
-  renderClock();
-  setInterval(renderClock, 30000);
-  ALL_RECORDS = await fetchProductionData();
-  renderAll();
+  setupFilters(); renderClock(); setInterval(renderClock, 30000);
+  ALL_RECORDS = await fetchProductionData(); renderAll();
 })();
 </script>
 </body>
