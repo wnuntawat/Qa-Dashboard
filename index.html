@@ -33,7 +33,12 @@
     --accent-dim:#DCE7FF; --pass-dim:#DEF3E9; --scrap-dim:#FBE1E2; --hold-dim:#FCEBD2; --rework-dim:#EAE3FB;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0; overflow-x: hidden;}
+ html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%;
+  overflow-x: hidden;
+}
   body{background:var(--navy-950); color:var(--ink); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; min-height:100vh;}
   a{color:inherit; text-decoration:none;}
 
@@ -43,8 +48,26 @@
   .hamburger { background: none; border: none; font-size: 24px; color: var(--ink); cursor: pointer; padding: 4px; }
 
   /* --- Shell & Sidebar --- */
-  .shell{display:grid; grid-template-columns:240px minmax(0, 1fr); min-height:100vh;}
-  .sidebar{background:var(--navy-900); border-right:1px solid var(--line); padding:24px 16px; position:sticky; top:0; height:100vh; transition: transform 0.3s ease; z-index: 105;}
+  .shell {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  min-height: 100vh;
+  width: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+  .sidebar {
+  background: var(--navy-900);
+  border-right: 1px solid var(--line);
+  padding: 24px 16px;
+  position: sticky;
+  top: 0;
+  left: 0 !important; /* บังคับชิดซ้าย */
+  margin: 0 !important;
+  height: 100vh;
+  overflow-y: auto; /* เพิ่ม Scroll เผื่อจอเล็กแล้วเมนูล้น */
+  z-index: 105;
+}
   .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(16, 24, 39, 0.4); z-index: 104; opacity: 0; transition: opacity 0.3s ease; }
   
   .brand{display:flex; align-items:center; gap:10px; padding:4px 6px 22px 6px; border-bottom:1px solid var(--line); margin-bottom:18px;}
@@ -158,7 +181,7 @@
   <aside class="sidebar" id="sidebar">
     <div class="brand">
       <div class="brand-mark">VW</div>
-      <div><div class="brand-name">Valveworks</div><div class="brand-sub">Plant 04 · QA</div></div>
+      <div><div class="brand-name">Valveworks</div><div class="brand-sub">Plant 01 · QA</div></div>
     </div>
     <div class="nav-group-label">Quality</div>
     <a href="index.html"><div class="nav-item active"><span class="nav-dot"></span>Dashboard</div></a>
