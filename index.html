@@ -34,11 +34,11 @@
   }
   *{box-sizing:border-box;}
   
+  /* แก้ไข: นำ overflow-x: hidden ออก เพื่อให้ position: sticky ทำงานได้สมบูรณ์ */
   html, body {
-    margin: 0 !important;
-    padding: 0 !important;
+    margin: 0;
+    padding: 0;
     width: 100%;
-    overflow-x: hidden;
   }
   
   body{background:var(--navy-950); color:var(--ink); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; min-height:100vh;}
@@ -55,8 +55,6 @@
     grid-template-columns: 240px minmax(0, 1fr);
     min-height: 100vh;
     width: 100%;
-    margin: 0 !important;
-    padding: 0 !important;
   }
   
   .sidebar {
@@ -65,8 +63,7 @@
     padding: 24px 16px;
     position: sticky;
     top: 0;
-    left: 0 !important;
-    margin: 0 !important;
+    align-self: start; /* จุดสำคัญมาก! บังคับให้ Sidebar ลอยตามการเลื่อนเมาส์ใน Grid */
     height: 100vh;
     overflow-y: auto;
     z-index: 105;
@@ -214,7 +211,7 @@
           <button data-range="7d" class="active">Last 7 days</button>
           <button data-range="30d">Last 30 days</button>
           <button data-range="mtd">MTD</button>
-          <button data-range="ytd">YTD</button> <!-- เพิ่มปุ่ม YTD ที่นี่ -->
+          <button data-range="ytd">YTD</button>
         </div>
         <select class="filter-select" id="valveFilter">
           <option value="all">All valve types</option>
@@ -349,7 +346,6 @@ function generateMockData() {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const offsets = [];
   
-  // สุ่มเฉพาะวันที่จำเป็น (30 วันล่าสุด, 30 วันของปีที่แล้ว, และรายสัปดาห์แบบ YTD)
   for (let i = 0; i < 30; i++) { offsets.push(i); offsets.push(i + 365); }
   for (let i = 30; i < 200; i += 3) { offsets.push(i); offsets.push(i + 365); }
 
@@ -398,12 +394,10 @@ function setSyncStatus(isLive, label) {
 let ALL_RECORDS = [];
 let state = { range: '7d', valveType: 'all' };
 
-/* --- ฟังก์ชันเปรียบเทียบเวลาแบบเพิ่มออฟเซ็ตปี (เพื่อคิด YoY) --- */
 function inRange(dateStr, range, offsetYears = 0) {
   const d = new Date(dateStr + 'T00:00:00');
   const targetDate = new Date(); targetDate.setHours(0, 0, 0, 0);
   
-  // ถอยเวลาไปตามที่กำหนด เช่น offsetYears = 1 แปลว่าให้ถอยไปเช็คของปีที่แล้ว
   targetDate.setFullYear(targetDate.getFullYear() - offsetYears);
 
   if (range === 'today') return d.getTime() === targetDate.getTime();
@@ -415,15 +409,11 @@ function inRange(dateStr, range, offsetYears = 0) {
     const diffDays = Math.round((targetDate - d) / 86400000);
     return diffDays >= 0 && diffDays < 30;
   }
-  // --- แทรกโค้ด MTD ตรงนี้ ---
   if (range === 'mtd') {
-    // วันที่ 1 ของเดือนเป้าหมาย ถึงวันที่ปัจจุบัน
     const startOfMonth = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
     return d >= startOfMonth && d <= targetDate;
   }
-  // -------------------------
   if (range === 'ytd') {
-    // วันที่ 1 ม.ค. ของปีเป้าหมาย ถึงวันที่ปัจจุบันของปีนั้น
     const startOfYear = new Date(targetDate.getFullYear(), 0, 1);
     return d >= startOfYear && d <= targetDate;
   }
@@ -438,9 +428,7 @@ function fmtInt(n) { return n.toLocaleString('en-US'); }
 function fmtPct(n) { return `${n.toFixed(1)}%`; }
 function sumQty(rows) { return rows.reduce((s, r) => s + (r.quantity || 1), 0); }
 
-/* --- การคำนวณ YoY และวาดลง KPI Cards --- */
 function renderKpis() {
-  // ดึงข้อมูลช่วงปัจจุบัน
   const currRows = filteredRecords(0);
   const cTotal = sumQty(currRows);
   const cPass = sumQty(currRows.filter(r => r.status === 'Pass'));
@@ -449,7 +437,6 @@ function renderKpis() {
   const cFty = cTotal ? (cPass / cTotal) * 100 : 0;
   const cDefect = cTotal ? (cScrap / cTotal) * 100 : 0;
 
-  // ดึงข้อมูลช่วงเดียวกันของปีที่แล้ว (YoY)
   const prevRows = filteredRecords(1);
   const pTotal = sumQty(prevRows);
   const pPass = sumQty(prevRows.filter(r => r.status === 'Pass'));
@@ -458,21 +445,14 @@ function renderKpis() {
   const pFty = pTotal ? (pPass / pTotal) * 100 : 0;
   const pDefect = pTotal ? (pScrap / pTotal) * 100 : 0;
 
-  // ฟังก์ชันคำนวณและสร้างสีลูกศร
   const formatTrend = (curr, prev, mode, invertColor = false) => {
-    // ถ้าไม่มีข้อมูลในอดีต (เช่น ใน Sheet มีแค่ข้อมูลเดือนนี้) ให้โชว์คำเตือน
     if (pTotal === 0) return `<span class="trend-neutral">— No prior data</span>`;
-    
     let diff = curr - prev;
     if (mode === 'relative') { diff = prev ? ((curr - prev) / prev) * 100 : 0; }
     if (Math.abs(diff) < 0.1) return `<span class="trend-neutral">0% vs Last Year</span>`;
-    
     let sign = diff > 0 ? '▲' : '▼';
     let colorClass = diff > 0 ? 'color-good' : 'color-bad';
-    
-    // กฎพิเศษ: ถ้าของเสียเยอะขึ้น (diff > 0) ถือว่าเป็นเรื่องแย่ (color-bad / สีแดง)
     if (invertColor) colorClass = diff > 0 ? 'color-bad' : 'color-good';
-    
     return `<span class="${colorClass}">${sign} ${Math.abs(diff).toFixed(1)}%</span> <span class="trend-neutral">vs Last Year</span>`;
   };
 
@@ -561,7 +541,6 @@ function renderTrend() {
   const note = state.valveType === 'all' ? '' : ` · ${state.valveType}`;
   document.getElementById('trendValveNote').textContent = note;
 
-  // 📝 กราฟเส้น จะคงไว้ที่ 30 วันย้อนหลังเสมอ (ไม่ว่าผู้ใช้จะกดปุ่มเวลา YTD ก็ตาม)
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const days = [];
   for (let i = 29; i >= 0; i--) {
