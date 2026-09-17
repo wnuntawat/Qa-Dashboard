@@ -19,7 +19,7 @@
     --rework: #8B5CF6; --rework-dim: #EDE9FE; --radius: 8px;
     --font-ui: 'IBM Plex Sans', system-ui, sans-serif; --font-data: 'IBM Plex Mono', 'Courier New', monospace;
   }
-  *{box-sizing:border-box;} html,body{margin:0;padding:0; overflow-x: hidden;}
+  *{box-sizing:border-box;} html,body{margin:0;padding:0; width: 100%;}
   body{background:var(--navy-950); color:var(--ink); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; min-height:100vh;}
   a{color:inherit; text-decoration:none;}
 
@@ -31,8 +31,8 @@
 
   /* Shell & Sidebar */
   /* ใช้งาน minmax(0, 1fr) เพื่อป้องกัน Grid Blowout ทะลุจอ */
-  .shell{ display:grid; grid-template-columns:240px minmax(0, 1fr); min-height:100vh; }
-  .sidebar{ background:var(--navy-900); border-right:1px solid var(--line); padding:24px 16px; position:sticky; top:0; height:100vh; transition: transform 0.3s ease; z-index: 105; }
+  .shell{ display:grid; grid-template-columns:240px minmax(0, 1fr); min-height:100vh; width: 100%; margin: 0; padding: 0;}
+  .sidebar{ background:var(--navy-900); border-right:1px solid var(--line); padding:24px 16px; position:sticky; top:0; align-self: start; height:100vh; overflow-y:auto; transition: transform 0.3s ease; z-index: 105; margin: 0; left: 0 !important;}
   .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(16, 24, 39, 0.4); z-index: 104; opacity: 0; transition: opacity 0.3s ease; }
   .brand{ display:flex; align-items:center; gap:10px; padding:4px 6px 22px 6px; border-bottom:1px solid var(--line); margin-bottom:18px; }
   .brand-name{ font-size:15px; font-weight:600; line-height:1.15; }
@@ -42,6 +42,7 @@
   .nav-item:hover { background: var(--navy-950); color: var(--ink); }
   .nav-item.active{ background:var(--navy-800); color:var(--accent); font-weight: 600; box-shadow:inset 3px 0 0 var(--accent); }
   .nav-dot{ width:6px;height:6px; border-radius:50%; background:currentColor; opacity:.7; flex-shrink:0; }
+  .sidebar-foot{position:absolute; bottom:22px; left:16px; right:16px; font-size:11px; color:var(--ink-faint); border-top:1px solid var(--line); padding-top:12px; line-height:1.5;}
 
   /* Responsive */
   @media (max-width: 860px){
@@ -116,22 +117,26 @@
   <aside class="sidebar" id="sidebar">
     <div class="brand">
       <div class="brand-mark">VW</div>
-      <div><div class="brand-name">Valveworks</div><div class="brand-sub">Plant 04 · QA</div></div>
+      <div><div class="brand-name">Valveworks</div><div class="brand-sub">Plant 01 · QA</div></div>
     </div>
     <div class="nav-group-label">Quality</div>
-    <!-- เมนูลิงก์สลับหน้า (หน้า Inspectors เป็น Active) -->
     <a href="index.html"><div class="nav-item"><span class="nav-dot"></span>Dashboard</div></a>
     <a href="production-log.html"><div class="nav-item"><span class="nav-dot"></span>Production log</div></a>
     <a href="ncr-register.html"><div class="nav-item"><span class="nav-dot"></span>NCR register</div></a>
+    <!-- เมนูลิงก์สลับหน้า (หน้า Inspectors เป็น Active) -->
     <a href="inspectors.html"><div class="nav-item active"><span class="nav-dot"></span>Inspectors</div></a>
     
     <div class="nav-group-label">System</div>
-    <a href=" data-sources.html">
+    <a href="data-sources.html">
     <div class="nav-item"><span class="nav-dot"></span>Data sources</div>
      </a>
-    <a href=" settings.html">
+    <a href="settings.html">
     <div class="nav-item"><span class="nav-dot"></span>Settings</div>
      </a>
+    <div class="sidebar-foot">
+      <div class="status-live"><span class="status-live-dot"></span><span id="syncStatusText">Connecting...</span></div>
+      <div id="clockLine">—</div>
+    </div>
   </aside>
 
   <main class="main">
@@ -145,6 +150,9 @@
           <button data-range="today">Today</button>
           <button data-range="7d" class="active">Last 7 days</button>
           <button data-range="30d">Last 30 days</button>
+          <!-- 🔴 เพิ่มปุ่ม MTD และ YTD ที่นี่ -->
+          <button data-range="mtd">MTD</button>
+          <button data-range="ytd">YTD</button>
         </div>
         <button class="icon-btn" id="refreshBtn" title="Refresh">⟳</button>
       </div>
@@ -266,20 +274,43 @@ async function fetchProductionData() {
     const res = await fetch(APPS_SCRIPT_URL);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const rows = await res.json();
+    setSyncStatus(true, `Live sheet · ${rows.length} rows`);
     return rows.map(normalizeRow);
   } catch (err) {
     console.warn('Fetch failed, using mock data:', err);
+    setSyncStatus(false, 'Mock data (live sheet unreachable)');
     return generateMockData();
   }
 }
 
+function setSyncStatus(isLive, label) {
+  const text = document.getElementById('syncStatusText');
+  if (text) text.textContent = label;
+}
+
+// 🔴 เพิ่มฟังก์ชัน inRange ใหม่ ที่รองรับ MTD และ YTD
 function inRange(dateStr, range) {
   const d = new Date(dateStr + 'T00:00:00');
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  const diffDays = Math.round((today - d) / 86400000);
-  if (range === 'today') return diffDays === 0;
-  if (range === '7d') return diffDays >= 0 && diffDays < 7;
-  return diffDays >= 0 && diffDays < 30;
+  
+  if (range === 'today') return d.getTime() === today.getTime();
+  if (range === '7d') {
+    const diffDays = Math.round((today - d) / 86400000);
+    return diffDays >= 0 && diffDays < 7;
+  }
+  if (range === '30d') {
+    const diffDays = Math.round((today - d) / 86400000);
+    return diffDays >= 0 && diffDays < 30;
+  }
+  if (range === 'mtd') {
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    return d >= startOfMonth && d <= today;
+  }
+  if (range === 'ytd') {
+    const startOfYear = new Date(today.getFullYear(), 0, 1);
+    return d >= startOfYear && d <= today;
+  }
+  return false;
 }
 
 let inspectorChartInstance;
@@ -327,6 +358,7 @@ function renderInspectors() {
     document.getElementById('kpiTopDesc').textContent = `${inspectorArray[0].total.toLocaleString()} units inspected`;
   } else {
     document.getElementById('kpiTopName').textContent = '-';
+    document.getElementById('kpiTopDesc').textContent = 'No data for this period';
   }
 
   // --- Update Table ---
@@ -433,7 +465,10 @@ document.getElementById('refreshBtn').addEventListener('click', async () => {
   renderInspectors();
 });
 
+function renderClock() { document.getElementById('clockLine').textContent = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+
 (async function init() {
+  renderClock(); setInterval(renderClock, 30000);
   ALL_RECORDS = await fetchProductionData();
   renderInspectors();
 })();
