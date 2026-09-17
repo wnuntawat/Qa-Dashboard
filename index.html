@@ -185,6 +185,7 @@
           <button data-range="today">Today</button>
           <button data-range="7d" class="active">Last 7 days</button>
           <button data-range="30d">Last 30 days</button>
+          <button data-range="mtd">MTD</button>
           <button data-range="ytd">YTD</button> <!-- เพิ่มปุ่ม YTD ที่นี่ -->
         </div>
         <select class="filter-select" id="valveFilter">
@@ -386,6 +387,13 @@ function inRange(dateStr, range, offsetYears = 0) {
     const diffDays = Math.round((targetDate - d) / 86400000);
     return diffDays >= 0 && diffDays < 30;
   }
+  // --- แทรกโค้ด MTD ตรงนี้ ---
+  if (range === 'mtd') {
+    // วันที่ 1 ของเดือนเป้าหมาย ถึงวันที่ปัจจุบัน
+    const startOfMonth = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
+    return d >= startOfMonth && d <= targetDate;
+  }
+  // -------------------------
   if (range === 'ytd') {
     // วันที่ 1 ม.ค. ของปีเป้าหมาย ถึงวันที่ปัจจุบันของปีนั้น
     const startOfYear = new Date(targetDate.getFullYear(), 0, 1);
@@ -440,7 +448,7 @@ function renderKpis() {
     return `<span class="${colorClass}">${sign} ${Math.abs(diff).toFixed(1)}%</span> <span class="trend-neutral">vs Last Year</span>`;
   };
 
-  const rangeLabels = { today: 'Today', '7d': '7 days', '30d': '30 days', 'ytd': 'YTD' };
+  const rangeLabels = { today: 'Today', '7d': '7 days', '30d': '30 days', 'mtd': 'Month-to-Date', 'ytd': 'YTD' };
 
   const cards = [
     { label: 'Total produced', value: fmtInt(cTotal), unit: 'units', color: 'var(--accent)', bg: 'var(--accent-dim)', badge: rangeLabels[state.range], foot: formatTrend(cTotal, pTotal, 'relative') },
